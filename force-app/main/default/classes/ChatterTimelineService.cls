@@ -62,7 +62,7 @@ public with sharing class ChatterTimelineService {
                 data.drilldownId = comment.FeedItemId;
                 data.type = 'Comment';
                 data.icon = 'standard:feedback';
-                data.iconBackground = 'rgb(72, 26, 84)';
+                data.iconBackground = '#481A54';
                 data.createdBy = comment.CreatedBy.Name;
                 data.createdById = comment.CreatedById;
                 data.parentPostId = comment.FeedItemId;
@@ -82,19 +82,8 @@ public with sharing class ChatterTimelineService {
      */
     private static List<FeedItem> getFeedItems(Id parentId, Map<String, Object> dateFilter) {
         String query = 'SELECT Id, Body, Type, CreatedDate, CreatedById, CreatedBy.Name, ' +
-                      'HasContent, RelatedRecordId, Title, LinkUrl, ContentFileName, ContentDescription ' +
+                      'HasContent, RelatedRecordId, Title, LinkUrl ' +
                       'FROM FeedItem WHERE ParentId = :parentId';
-        
-        // Apply date filters
-        if (dateFilter != null && dateFilter.containsKey('startDate')) {
-            DateTime startDate = (DateTime) dateFilter.get('startDate');
-            query += ' AND CreatedDate >= :startDate';
-        }
-        
-        if (dateFilter != null && dateFilter.containsKey('endDate')) {
-            DateTime endDate = (DateTime) dateFilter.get('endDate');
-            query += ' AND CreatedDate <= :endDate';
-        }
         
         // Filter out certain types if needed
         query += ' AND Type IN (\'TextPost\', \'LinkPost\', \'ContentPost\', \'TrackedChange\', \'QuestionPost\')';
@@ -119,17 +108,6 @@ public with sharing class ChatterTimelineService {
         
         String query = 'SELECT Id, FeedItemId, CommentBody, CreatedDate, CreatedById, CreatedBy.Name ' +
                       'FROM FeedComment WHERE FeedItemId IN :feedItemIds';
-        
-        // Apply date filters
-        if (dateFilter != null && dateFilter.containsKey('startDate')) {
-            DateTime startDate = (DateTime) dateFilter.get('startDate');
-            query += ' AND CreatedDate >= :startDate';
-        }
-        
-        if (dateFilter != null && dateFilter.containsKey('endDate')) {
-            DateTime endDate = (DateTime) dateFilter.get('endDate');  
-            query += ' AND CreatedDate <= :endDate';
-        }
         
         query += ' ORDER BY CreatedDate DESC LIMIT 200';
         
@@ -158,16 +136,16 @@ public with sharing class ChatterTimelineService {
      */
     private static String getIconColorForFeedType(String feedType) {
         Map<String, String> feedTypeColorMap = new Map<String, String>{
-            'TextPost' => 'rgb(22, 50, 92)',
-            'LinkPost' => 'rgb(62, 62, 60)',
-            'ContentPost' => 'rgb(186, 5, 23)',
-            'TrackedChange' => 'rgb(84, 105, 141)',
-            'QuestionPost' => 'rgb(248, 169, 1)',
-            'PollPost' => 'rgb(75, 202, 129)'
+            'TextPost' => '#16325C',
+            'LinkPost' => '#3E3E3C',
+            'ContentPost' => '#BA0517',
+            'TrackedChange' => '#54698D',
+            'QuestionPost' => '#F8A901',
+            'PollPost' => '#4BCA81'
         };
         
         return feedTypeColorMap.containsKey(feedType) ? 
-               feedTypeColorMap.get(feedType) : 'rgb(22, 50, 92)';
+               feedTypeColorMap.get(feedType) : '#16325C';
     }
     
     /**
