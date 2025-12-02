@@ -11,4 +11,32 @@
     <description>Permissions related to the timeline lwc</description>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Timeline User</label>
+    <fieldPermissions>
+    <editable>true</editable>
+    <field>FeedItem.Body</field>
+    <readable>true</readable>
+</fieldPermissions>
+<fieldPermissions>
+    <editable>true</editable>
+    <field>FeedComment.CommentBody</field>
+    <readable>true</readable>
+</fieldPermissions>
+<objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>true</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>FeedItem</object>
+    <viewAllRecords>false</viewAllRecords>
+</objectPermissions>
+<objectPermissions>
+    <allowCreate>true</allowCreate>
+    <allowDelete>false</allowDelete>
+    <allowEdit>false</allowEdit>
+    <allowRead>true</allowRead>
+    <modifyAllRecords>false</modifyAllRecords>
+    <object>FeedComment</object>
+    <viewAllRecords>false</viewAllRecords>
+</objectPermissions>
 </PermissionSet>
