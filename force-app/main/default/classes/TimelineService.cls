@@ -1,6 +1,7 @@
 /**
  * @description Apex supporting methods for the timeline lightning web component
  */
+
 public with sharing class TimelineService {
     /**
      * @description Return all child record types for the parent record in context
@@ -683,4 +684,30 @@ public with sharing class TimelineService {
 
     private class TimelineSetupException extends Exception {
     }
+/**
+ * @description Get timeline data including Chatter feeds
+ * @param parentId The parent record ID
+ * @param includeChatter Whether to include Chatter data
+ * @return Combined timeline data
+ */
+@AuraEnabled(cacheable=true)
+public static List<Object> getTimelineDataWithChatter(Id parentId, Boolean includeChatter) {
+    List<Object> allTimelineData = new List<Object>();
+    
+    // Get existing timeline data
+    allTimelineData.addAll(getTimelineData(parentId));
+    
+    // Add Chatter data if requested
+    if (includeChatter) {
+        try {
+            List<ChatterTimelineService.TimelineData> chatterData = 
+                ChatterTimelineService.getChatterTimelineData(parentId, null);
+            allTimelineData.addAll(chatterData);
+        } catch (Exception e) {
+            System.debug('Error getting Chatter data: ' + e.getMessage());
+        }
+    }
+    
+    return allTimelineData;
+}
 }
