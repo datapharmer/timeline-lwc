@@ -172,6 +172,50 @@
         </div>
     </article>
 
+   <template if:true={includeChatter}>
+    <div class="slds-m-bottom_small">
+        <lightning-button
+            label="New Chatter Post"
+            icon-name="standard:post"
+            variant="brand"
+            onclick={handleShowChatterComposer}>
+        </lightning-button>
+    </div>
+    
+    <template if:true={showChatterComposer}>
+        <div class="slds-box slds-m-bottom_medium">
+            <div class="slds-form">
+                <div class="slds-form-element">
+                    <label class="slds-form-element__label" for="chatter-post">
+                        Share an update...
+                    </label>
+                    <div class="slds-form-element__control">
+                        <lightning-textarea
+                            id="chatter-post"
+                            value={chatterPostBody}
+                            placeholder="What would you like to share?"
+                            onchange={handleChatterPostChange}>
+                        </lightning-textarea>
+                    </div>
+                </div>
+                <div class="slds-m-top_small">
+                    <lightning-button
+                        label="Share"
+                        variant="brand"
+                        onclick={handleCreateChatterPost}>
+                    </lightning-button>
+                    <lightning-button
+                        label="Cancel"
+                        variant="neutral"
+                        class="slds-m-left_x-small"
+                        onclick={handleCancelChatterPost}>
+                    </lightning-button>
+                </div>
+            </div>
+        </div>
+    </template>
+</template> 
+
     <!--tooltips FALLBACK WHEN AN OBJECT IS NOT SUPPORTED-->
     <div aria-label="Tooltip popover" class={tooltipClass}>
         <div class="tooltip-content">
