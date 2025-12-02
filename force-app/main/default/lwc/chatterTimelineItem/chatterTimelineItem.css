@@ -1,0 +1,51 @@
+.slds-timeline__item_expandable {
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.slds-timeline__icon {
+    background-color: var(--lwc-colorBackground);
+}
+
+.slds-rich-text-area__content {
+    word-wrap: break-word;
+    word-break: break-word;
+}
+
+.slds-timeline__item_details {
+    animation: slideDown 0.2s ease-in-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+    }
+    to {
+        opacity: 1;
+        max-height: 500px;
+    }
+}
+
+/* Chatter-specific styling */
+.chatter-mention {
+    color: #0070d2;
+    font-weight: bold;
+}
+
+.chatter-link {
+    color: #0070d2;
+    text-decoration: underline;
+}
+
+.chatter-attachment-preview {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.comment-section {
+    background-color: #f3f3f3;
+    border-radius: 4px;
+}
