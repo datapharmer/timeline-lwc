@@ -35,6 +35,9 @@ import BUTTON_CANCEL from '@salesforce/label/c.Timeline_Label_Cancel';
 import NAVIGATION_HEADER from '@salesforce/label/c.Timeline_Navigation_Toast_Header';
 import NAVIGATION_BODY from '@salesforce/label/c.Timeline_Navigation_Toast_Body';
 
+import getTimelineDataWithChatter from '@salesforce/apex/TimelineService.getTimelineDataWithChatter';
+import createChatterPost from '@salesforce/apex/ChatterTimelineService.createChatterPost';
+
 export default class timeline extends NavigationMixin(LightningElement) {
     //Adminstrator accessible attributes in app builder
     @api timelineParent; //parent field for the lwc set as design attribute
@@ -51,6 +54,11 @@ export default class timeline extends NavigationMixin(LightningElement) {
     @api recordId; //current record id of lead, case, opportunity, contact or account
 
     @api flexipageRegionWidth; //SMALL, MEDIUM and LARGE based on where the component is placed in App Builder templates
+
+    @api includeChatter = false;
+    
+    showChatterComposer = false;
+    chatterPostBody = '';
 
     isLanguageRightToLeft = false;
 
@@ -1522,4 +1530,51 @@ export default class timeline extends NavigationMixin(LightningElement) {
         }
         return summary;
     }
+
+    handleChatterToggle(event) {
+    this.includeChatter = event.detail.checked;
+    this.refreshTimeline();
+    }
+    
+    handleShowChatterComposer() {
+        this.showChatterComposer = true;
+    }
+    
+    handleChatterPostChange(event) {
+        this.chatterPostBody = event.target.value;
+    }
+    
+    handleCreateChatterPost() {
+        if (this.chatterPostBody && this.chatterPostBody.trim()) {
+            createChatterPost({
+                parentId: this.recordId,
+                body: this.chatterPostBody,
+                type: 'TextPost'
+            })
+            .then(result => {
+                this.showChatterComposer = false;
+                this.chatterPostBody = '';
+                this.refreshTimeline();
+                this.showToast('Success', 'Chatter post created successfully', 'success');
+            })
+            .catch(error => {
+                this.showToast('Error', 'Error creating Chatter post: ' + error.body.message, 'error');
+            });
+        }
+    }
+    
+    handleCancelChatterPost() {
+        this.showChatterComposer = false;
+        this.chatterPostBody = '';
+    }
+    
+    showToast(title, message, variant) {
+        const event = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: variant
+        });
+        this.dispatchEvent(event);
+    }  
+    
 }
