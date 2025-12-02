@@ -1,0 +1,124 @@
+<template>
+    <div class={itemClass}>
+        <span class="slds-assistive-text">{postTypeLabel}</span>
+        <div class="slds-media">
+            <div class="slds-media__figure">
+                <button class="slds-button slds-button_icon" 
+                        title="Toggle details" 
+                        onclick={handleToggleDetail}>
+                    <lightning-icon icon-name={timelineItem.icon} 
+                                    size="small"
+                                    class="slds-timeline__icon">
+                    </lightning-icon>
+                </button>
+            </div>
+            <div class="slds-media__body">
+                <div class="slds-grid slds-grid_align-spread slds-timeline__trigger">
+                    <div class="slds-grid slds-grid_vertical-align-center slds-truncate_container_75 slds-no-space">
+                        <h3 class="slds-truncate" title={timelineItem.createdBy}>
+                            <a onclick={handleViewRecord}>
+                                <strong>{timelineItem.createdBy}</strong>
+                            </a>
+                        </h3>
+                        <span class="slds-m-left_x-small slds-text-body_small">
+                            {postTypeLabel}
+                        </span>
+                        <template if:true={hasComments}>
+                            <span class="slds-m-left_x-small slds-badge">
+                                {timelineItem.commentCount} Comments
+                            </span>
+                        </template>
+                        <template if:true={hasAttachments}>
+                            <span class="slds-m-left_x-small">
+                                <lightning-icon icon-name="utility:attach" 
+                                                size="x-small"
+                                                alternative-text="Has attachments">
+                                </lightning-icon>
+                            </span>
+                        </template>
+                    </div>
+                    <div class="slds-timeline__actions slds-timeline__actions_inline">
+                        <span class="slds-text-body_small slds-text-color_weak">
+                            {formattedDate}
+                        </span>
+                        <button class="slds-button slds-button_icon slds-button_icon-border-filled slds-button_icon-x-small"
+                                title="More Options">
+                            <lightning-icon icon-name="utility:down" 
+                                            size="xx-small"
+                                            alternative-text="More Options">
+                            </lightning-icon>
+                        </button>
+                    </div>
+                </div>
+                <template if:true={isExpanded}>
+                    <article class="slds-box slds-timeline__item_details slds-theme_shade slds-m-top_x-small slds-m-horizontal_xx-small">
+                        <div class="slds-rich-text-area__content slds-text-longform">
+                            <lightning-formatted-rich-text value={bodyContent}>
+                            </lightning-formatted-rich-text>
+                        </div>
+                        
+                        <!-- Chatter Actions -->
+                        <template if:true={isChatterPost}>
+                            <div class="slds-m-top_small">
+                                <lightning-button-group>
+                                    <lightning-button label="Like" 
+                                                      variant="neutral" 
+                                                      size="small"
+                                                      icon-name="utility:like"
+                                                      onclick={handleLike}>
+                                    </lightning-button>
+                                    <lightning-button label="Comment" 
+                                                      variant="neutral" 
+                                                      size="small"
+                                                      icon-name="utility:comments"
+                                                      onclick={handleAddComment}>
+                                    </lightning-button>
+                                    <template if:true={hasComments}>
+                                        <lightning-button label="View Comments" 
+                                                          variant="neutral" 
+                                                          size="small"
+                                                          onclick={handleToggleComments}>
+                                        </lightning-button>
+                                    </template>
+                                    <template if:true={hasAttachments}>
+                                        <lightning-button label="View Files" 
+                                                          variant="neutral" 
+                                                          size="small"
+                                                          onclick={handleToggleAttachments}>
+                                        </lightning-button>
+                                    </template>
+                                </lightning-button-group>
+                            </div>
+                        </template>
+                        
+                        <!-- Comments Section -->
+                        <template if:true={showComments}>
+                            <div class="slds-m-top_small slds-p-around_small slds-border_top">
+                                <div class="slds-text-title_caps slds-m-bottom_x-small">
+                                    Comments
+                                </div>
+                                <!-- Comments would be loaded here -->
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                    Comments will be displayed here...
+                                </div>
+                            </div>
+                        </template>
+                        
+                        <!-- Attachments Section -->
+                        <template if:true={showAttachments}>
+                            <div class="slds-m-top_small slds-p-around_small slds-border_top">
+                                <div class="slds-text-title_caps slds-m-bottom_x-small">
+                                    Attached Files
+                                </div>
+                                <!-- Attachments would be loaded here -->
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                    Attachments will be displayed here...
+                                </div>
+                            </div>
+                        </template>
+                    </article>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>
