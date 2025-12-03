@@ -1407,22 +1407,25 @@ export default class timeline extends NavigationMixin(LightningElement) {
     }
     handleAllTypes() {
         const allTypesCheckbox = this.template.querySelector('input.all-types-checkbox');
-        const countAllValues = this.allFilterValues.length;
-        const countSelectedValues = this.filterValues.length;
+        // Add a null check to ensure the element has been rendered
+        if (allTypesCheckbox) {
+            const countAllValues = this.allFilterValues.length;
+            const countSelectedValues = this.filterValues.length;
 
-        if (countSelectedValues !== countAllValues && countSelectedValues > 0) {
-            allTypesCheckbox.checked = false;
-            allTypesCheckbox.indeterminate = true;
-        }
+            if (countSelectedValues !== countAllValues && countSelectedValues > 0) {
+                allTypesCheckbox.checked = false;
+                allTypesCheckbox.indeterminate = true;
+            }
 
-        if (countSelectedValues === countAllValues) {
-            allTypesCheckbox.indeterminate = false;
-            allTypesCheckbox.checked = true;
-        }
+            if (countSelectedValues === countAllValues) {
+                allTypesCheckbox.indeterminate = false;
+                allTypesCheckbox.checked = true;
+            }
 
-        if (countSelectedValues < 1) {
-            allTypesCheckbox.indeterminate = false;
-            allTypesCheckbox.checked = false;
+            if (countSelectedValues < 1) {
+                allTypesCheckbox.indeterminate = false;
+                allTypesCheckbox.checked = false;
+            }
         }
     }
 
