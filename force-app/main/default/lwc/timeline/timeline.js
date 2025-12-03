@@ -1443,4 +1443,42 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
         if (this.totalTimelineRecords > 0) {
             this.illustrationVisibility = 'illustration-hidden';
-            this._d3
+            this._d3timelineMapSVG.selectAll('[class~=timeline-map-record]').remove();
+            this._d3timelineMap.redraw();
+            this._d3brush.redraw();
+        }
+    }
+
+    tooltipLoaded() {
+        this.isTooltipLoading = false;
+    }
+
+    @api
+    get timelineSummaryText() {
+        let summary = '';
+
+        if (this.flexipageRegionWidth === 'SMALL') {
+            summary = this.localisedZoomStartDate + ' - ' + this.localisedZoomEndDate;
+        } else {
+            summary =
+                this.label.SHOWING +
+                ' ' +
+                this.localisedZoomStartDate +
+                ' - ' +
+                this.localisedZoomEndDate +
+                ' • ' +
+                this.daysToShow +
+                ' ' +
+                this.label.DAYS +
+                ' • ' +
+                this.totalZoomedRecords +
+                ' ' +
+                this.label.ITEMS;
+        }
+        return summary;
+    }
+
+    get isApplyFilterDisabled() {
+        return !this.isFilterUpdated;
+    }
+}
