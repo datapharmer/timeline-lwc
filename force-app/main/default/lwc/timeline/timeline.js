@@ -11,7 +11,6 @@ import getTimelineTypes from '@salesforce/apex/TimelineService.getTimelineTypes'
 import { refreshApex } from '@salesforce/apex';
 
 import d3JS from '@salesforce/resourceUrl/d3minified';
-
 import APEX from '@salesforce/label/c.Timeline_Error_Apex';
 import SETUP from '@salesforce/label/c.Timeline_Error_Setup';
 import NO_DATA_HEADER from '@salesforce/label/c.Timeline_Error_NoDataHeader';
@@ -20,7 +19,6 @@ import CONSOLE_HEADER from '@salesforce/label/c.Timeline_Error_ConsoleTab';
 import CONSOLE_SUBHEADER from '@salesforce/label/c.Timeline_Error_ConsoleTabSubHeader';
 import JAVASCRIPT_LOAD from '@salesforce/label/c.Timeline_Error_JavaScriptResources';
 import UNHANDLED from '@salesforce/label/c.Timeline_Error_Unhandled';
-
 import DAYS from '@salesforce/label/c.Timeline_Label_Days';
 import SHOWING from '@salesforce/label/c.Timeline_Label_Showing';
 import ITEMS from '@salesforce/label/c.Timeline_Label_Items';
@@ -53,7 +51,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
     @api flexipageRegionWidth; //SMALL, MEDIUM and LARGE based on where the component is placed in App Builder templates
 
     isLanguageRightToLeft = false;
-
     timelineWidth = 'LARGE';
     timelineTypes;
     timelineStart; //Calculated based on the earliestRange
@@ -74,7 +71,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
     noFilterData = false; //Boolean when no data is returned after filtering
     isLoaded = false; //Boolean when timeline data is loaded
     isError = false; //Boolean when there is an error
-
     isMouseOver = false; //Boolean when mouse over is detected
     isTooltipLoading = true;
     mouseOverRecordId; //Current Id of the record being hovered over
@@ -87,6 +83,10 @@ export default class timeline extends NavigationMixin(LightningElement) {
     mouseOverPositionValue;
     nubbinClass = 'slds-nubbin_left-top'; // Default nubbin class
 
+    // *** MODIFICATION START ***
+    mouseOverFallbackIsHtml = false;
+    // *** MODIFICATION END ***
+
     currentParentField;
     filterValues = [];
     startingFilterValues = [];
@@ -97,7 +97,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
     isFilterLoaded = false;
 
     illustrationVisibility = 'illustration-hidden'; //Toggles the class to show and hide the illustration component
-
     illustrationHeader; //Header to display when an information box displays
     illustrationSubHeader; //Sub Header to display when an info box appears
     illustrationType; //Type of illustration to display, 'error' or 'no data'
@@ -144,7 +143,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         JAVASCRIPT_LOAD,
         UNHANDLED
     };
-
     toast = {
         NAVIGATION_HEADER,
         NAVIGATION_BODY
@@ -208,7 +206,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
                     tempFilter.label = timelineTs[key];
                     tempFilter.value = key;
-
                     this.objectFilter.push(tempFilter);
                     this.startingFilterValues.push(key);
                     this.allFilterValues.push(key);
@@ -254,7 +251,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         ) {
             this.timelineWidth = this.flexipageRegionWidth;
         }
-
         if (!this._d3Rendered) {
             this.todaysColour = this.todayColourMap[this.showToday];
             this.iconRoundedValue = this.iconStyleMap[this.iconStyle];
@@ -262,7 +258,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
             let timelineDIV = this.template.querySelector('div.timeline-canvas');
             this.currentParentField = this.timelineParent;
             timelineDIV.setAttribute('style', 'height:' + this._timelineHeight + 'px');
-
             Promise.all([loadScript(this, d3JS)])
                 .then(() => {
                     //Setup d3 timeline by manipulating the DOM and do it once only as render gets called many times
@@ -278,7 +273,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                     this._d3timelineMapAxisSVG = d3
                         .select(this.template.querySelector('div.timeline-map-axis'))
                         .append('svg');
-
                     this.processTimeline();
                 })
                 .catch((error) => {
@@ -295,7 +289,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 timelineSummary[i].classList.add('timeline-summary-verbose-' + this.timelineWidth);
             }
         }
-
         // In renderedCallback, after D3 setup
         this._debouncedResizeHandler = this.debounce(() => {
             try {
@@ -329,7 +322,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         }, 200);
         window.addEventListener('resize', this._debouncedResizeHandler);
     }
-
     processTimeline() {
         const me = this;
         me.isError = false;
@@ -352,7 +344,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         //Convert earliestRange to months
         me.timelineStart = dateTimeFormat.format(new Date().setMonth(new Date().getMonth() - 12 * me.earliestRange));
         me.timelineEnd = dateTimeFormat.format(new Date().setMonth(new Date().getMonth() + 12 * me.latestRange));
-
         me._d3timelineCanvasSVG.selectAll('*').remove();
         me._d3timelineCanvasAxisSVG.selectAll('*').remove();
         me._d3timelineMapSVG.selectAll('*').remove();
@@ -374,7 +365,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                     if (this.template.querySelector('div.timeline-canvas').offsetWidth !== 0) {
                         if (result.length > 0) {
                             me.totalTimelineRecords = result.length;
-
                             //Process timeline records
                             me._timelineData = me.getTimelineRecords(result);
 
@@ -394,7 +384,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                                 me._d3timelineCanvasSVG,
                                 me._d3timelineCanvas
                             );
-
                             const axisLabelConfig = {
                                 innerTickSize: 0,
                                 tickPadding: 2,
@@ -412,7 +401,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                             //Process timeline map
                             me._d3timelineMap = me.timelineMap();
                             me._d3timelineMap.redraw();
-
                             const mapAxisConfig = {
                                 innerTickSize: 4,
                                 tickPadding: 4,
@@ -439,7 +427,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 let errorType = 'Error';
                 let errorHeading,
                     errorMessage = '--';
-
                 try {
                     errorMessage = error.body.message;
                     let customError = JSON.parse(errorMessage);
@@ -464,7 +451,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         result.forEach(function (record, index) {
             let recordCopy = {};
             let options;
-
             recordCopy.recordId = record.objectId;
             recordCopy.id = index;
             recordCopy.label =
@@ -489,7 +475,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                     timeZone: TIMEZONE
                 };
             }
-
             let dateFormatter = new Intl.DateTimeFormat(me.calculatedLOCALE(), options);
 
             let convertDate = record.positionDateValue;
@@ -504,7 +489,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
             recordCopy.positionDateValue = localPositionDate;
             recordCopy.time = localDate;
-
             recordCopy.detailField = record.detailField;
             recordCopy.detailFieldLabel = record.detailFieldLabel;
             recordCopy.fallbackTooltipField = record.fallbackTooltipField;
@@ -513,6 +497,10 @@ export default class timeline extends NavigationMixin(LightningElement) {
             recordCopy.tooltipObject = record.tooltipObject;
             recordCopy.drilldownId = record.drilldownId;
             recordCopy.alternateDetailId = record.alternateDetailId;
+            
+            // *** MODIFICATION START ***
+            recordCopy.fallbackIsHtml = record.fallbackIsHtml === 'true';
+            // *** MODIFICATION END ***
 
             recordCopy.type = record.type;
             recordCopy.icon = record.icon;
@@ -525,7 +513,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         timelineRecords.data = timelineResult;
         timelineRecords.minTime = d3.min(timelineTimes);
         timelineRecords.maxTime = d3.max(timelineTimes);
-
         timelineRecords.requestRange = [
             new Date(new Date().setMonth(new Date().getMonth() - 12 * this.earliestRange)),
             new Date(new Date().setMonth(new Date().getMonth() + 12 * this.latestRange))
@@ -551,7 +538,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         timelineCanvas.y = function (swimlane) {
             return swimlane * 25 * 1 + (swimlane + 1) * 5;
         };
-
         timelineCanvas.width = width;
         timelineCanvas.height = timelineHeight;
 
@@ -577,7 +563,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 .style('stroke-dasharray', '7, 7')
                 .style('shape-rendering', 'crispEdges')
                 .attr('y2', timelineHeight);
-
             today
                 .append('rect')
                 .style('fill', this.todaysColour)
@@ -599,7 +584,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
             let swimlanes = [];
             const unitInterval = (timelineCanvas.x.domain()[1] - timelineCanvas.x.domain()[0]) / timelineCanvas.width;
-
             let data = timelineData.data
                 .filter(function (d) {
                     if (me.isLanguageRightToLeft) {
@@ -643,7 +627,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
             timelineCanvas.width = timelineCanvas.x.range()[1];
             timelineCanvas.attr('width', timelineCanvas.width);
-
             const svgHeight = Math.max(timelineCanvas.y(swimlanes.length), timelineHeight);
             timelineCanvas.height = timelineHeight;
 
@@ -658,7 +641,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 .attr('transform', function (d) {
                     return 'translate(' + timelineCanvas.x(d.time) + ', ' + timelineCanvas.y(d.swimlane) + ')';
                 });
-
             timelineCanvas.records = timelineCanvas.data
                 .enter()
                 .append('g')
@@ -672,7 +654,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                         if (d.alternateDetailId !== '') {
                             drilldownId = d.alternateDetailId;
                         }
-
                         switch (d.objectName) {
                             case 'ContentDocumentLink': {
                                 me[NavigationMixin.Navigate]({
@@ -747,7 +728,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                     .attr('height', 24)
                     .attr('rx', me.iconRoundedValue)
                     .attr('ry', me.iconRoundedValue);
-
                 timelineCanvas.records
                     .append('image')
                     .attr('x', 1)
@@ -756,7 +736,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                     .attr('width', 22)
                     .attr('xlink:href', function (d) {
                         let iconImage = '';
-
                         switch (d.type) {
                             case 'Call':
                                 iconImage = '/img/icon/t4v35/standard/log_a_call.svg';
@@ -776,7 +755,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                         }
                         return iconImage;
                     });
-
                 timelineCanvas.records
                     .append('text')
                     .attr('class', 'timeline-canvas-record-label')
@@ -799,11 +777,9 @@ export default class timeline extends NavigationMixin(LightningElement) {
                         if (d.drilldownId !== '') {
                             drilldownId = d.drilldownId;
                         }
-
                         if (d.alternateDetailId !== '') {
                             drilldownId = d.alternateDetailId;
                         }
-
                         switch (d.objectName) {
                             case 'ContentDocumentLink': {
                                 me[NavigationMixin.Navigate]({
@@ -842,7 +818,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                         let tooltipId = d.recordId;
                         let tooltipObject = d.objectName;
                         me.isTooltipLoading = true;
-
                         if (d.tooltipId !== '') {
                             tooltipId = d.tooltipId;
                             tooltipObject = d.tooltipObject;
@@ -853,13 +828,16 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
                         me.mouseOverFallbackField = d.fallbackTooltipField;
                         me.mouseOverFallbackValue = d.fallbackTooltipValue;
+                        
+                        // *** MODIFICATION START ***
+                        me.mouseOverFallbackIsHtml = d.fallbackIsHtml;
+                        // *** MODIFICATION END ***
 
                         me.mouseOverDetailLabel = d.detailFieldLabel;
                         me.mouseOverDetailValue = d.detailField;
 
                         me.mouseOverPositionLabel = d.positionDateField;
                         me.mouseOverPositionValue = d.positionDateValue;
-
                         me.isMouseOver = true;
                         let tooltipDIV = me.template.querySelector('div.tooltip-panel');
                         let tipPosition;
@@ -947,7 +925,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         };
         return timelineCanvas;
     }
-
     axis(axisConfig, targetSVG, target) {
         const me = this;
         const timelineCanvas = me._d3timelineCanvas;
@@ -975,7 +952,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
             .attr('role', 'presentation')
             .attr('aria-hidden', 'true')
             .call(x_axis);
-
         if (typeof axisConfig.translate === 'object') {
             axis.attr('transform', function () {
                 return 'translate(' + axisConfig.translate[0] + ', ' + axisConfig.translate[1] + ')';
@@ -1003,14 +979,12 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
         return axis;
     }
-
     processError(type, header, message) {
         if (this.illustrationVisibility !== 'illustration') {
             this.isLoaded = true;
             this.illustrationVisibility = 'illustration';
             this.illustrationHeader = header;
             this.illustrationSubHeader = message;
-
             switch (type) {
                 case 'No-Data':
                     this.illustrationType = 'Desert';
@@ -1040,7 +1014,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
             }
         }
     }
-
     timelineMap() {
         const me = this;
 
@@ -1087,7 +1060,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
             var swimlane = 0;
             let swimlanes = [];
             const unitInterval = (timelineMap.x.domain()[1] - timelineMap.x.domain()[0]) / timelineMap.width;
-
             timelineMap.currentDate = timelineMap
                 .selectAll('[class~=timeline-map-current-date]')
                 .attr('transform', 'translate(' + timelineMap.x(currentDate) + ')');
@@ -1109,7 +1081,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 entry.swimlane = swimlane;
                 swimlanes[swimlane] = entry.endTime;
             });
-
             data = data.filter(function (d) {
                 if (d.swimlane < 8) {
                     return true;
@@ -1128,7 +1099,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 .attr('transform', function (d) {
                     return 'translate(' + timelineMap.x(d.time) + ', ' + timelineMap.y(d.swimlane) + ')';
                 });
-
             timelineMap.records = timelineMap.data
                 .enter()
                 .append('g')
@@ -1153,7 +1123,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         };
         return timelineMap;
     }
-
     brush() {
         const me = this;
         const d3timeline = me._d3timelineCanvas;
@@ -1168,7 +1137,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         let defaultZoomDate;
         let startBrush;
         let endBrush;
-
         switch (this.zoomTo) {
             //case 'Historical Date':
             //   TODO
@@ -1182,7 +1150,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 defaultZoomDate = new Date().getTime();
                 break;
         }
-
         if (me.zoomStartDate !== undefined) {
             startBrush = new Date(me.zoomStartDate).toLocaleDateString('en-GB', {
                 day: 'numeric',
@@ -1204,7 +1171,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         timelineMapLayoutB.append('g').attr('class', 'brush').attr('transform', 'translate(0, -1)');
 
         const xBrush = d3.select(this.template.querySelector('div.timeline-map')).select('g.brush');
-
         let brush = d3
             .brushX()
             .extent([
@@ -1231,7 +1197,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 'd',
                 'M0,0 L75,0 L75,176 C75,184.284271 68.2842712,191 60,191 L15,191 C6.71572875,191 1.01453063e-15,184.284271 0,176 L0,0 L0,0 Z'
             );
-
         xBrush.call(brush).call(brush.move, [new Date(startBrush), new Date(endBrush)].map(timelineMap.x));
 
         brush.redraw = function () {
@@ -1258,7 +1223,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
             xBrush.call(brush).call(brush.move, [new Date(startBrush), new Date(endBrush)].map(timelineMap.x));
         };
-
         function brushed(event) {
             const selection = event.selection;
             const dommy = [];
@@ -1283,7 +1247,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
                 // To calculate the time difference of two dates
                 let Difference_In_Time = a.getTime() - b.getTime();
-
                 // To calculate the no. of days between two dates
                 let Difference_In_Days = Math.round(Difference_In_Time / (1000 * 3600 * 24));
                 me.daysToShow = Difference_In_Days;
@@ -1300,7 +1263,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 me.zoomEndDate = timelineMap.x
                     .invert(selection[1])
                     .toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-
                 me.localisedZoomStartDate = dateTimeFormat.format(new Date(timelineMap.x.invert(selection[0])));
                 me.localisedZoomEndDate = dateTimeFormat.format(new Date(timelineMap.x.invert(selection[1])));
             }
@@ -1326,7 +1288,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                     month: 'short',
                     year: 'numeric'
                 });
-
                 let eDate = new Date(me.zoomStartDate);
                 eDate.setDate(eDate.getDate() + 14);
 
@@ -1362,7 +1323,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         }
         return false;
     }
-
     get showSummary() {
         if (this.isError || this.noData || this.noFilterData || !this.isLoaded) {
             return false;
@@ -1392,7 +1352,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         const filterPopover = this.template.querySelector('div.timeline-filter');
         const filterClasses = String(filterPopover.classList);
         const refreshButton = this.template.querySelector('lightning-button-icon.timeline-refresh');
-
         if (filterClasses.includes('slds-is-open')) {
             refreshButton.disabled = false;
             filterPopover.classList.remove('slds-is-open');
@@ -1416,7 +1375,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 break;
         }
     }
-
     get filterOptions() {
         this.handleAllTypes();
         return this.objectFilter;
@@ -1447,7 +1405,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
             this.isFilterUpdated = true;
         }
     }
-
     handleAllTypes() {
         const allTypesCheckbox = this.template.querySelector('input.all-types-checkbox');
         const countAllValues = this.allFilterValues.length;
@@ -1475,7 +1432,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
         this.startingFilterValues = this.filterValues;
         this.toggleFilter();
     }
-
     cancelFilter() {
         this.filterValues = this.startingFilterValues;
         this.isFilterUpdated = false;
