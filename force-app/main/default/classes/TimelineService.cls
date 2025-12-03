@@ -14,7 +14,6 @@ public with sharing class TimelineService {
     public static Map<String, String> getTimelineTypes(String parentObjectId, String parentFieldName) {
         try {
             Map<String, String> parentDetails = getParentDetails(parentObjectId, parentFieldName);
-
             String parentObjectType = parentDetails.get('QueryObjectType');
             String parentConfigType = parentDetails.get('ConfigObjectType'); //NOPMD
             parentObjectId = parentDetails.get('Id');
@@ -36,7 +35,6 @@ public with sharing class TimelineService {
                 'ORDER BY Sequence__c ASC '; //NOPMD
 
             List<Timeline_Configuration__mdt> listOfTimelineConfigurations = Database.query(queryTimelineConfiguration); //NOPMD
-
             Map<String, String> mapOfTimelineTypes = new Map<String, String>();
 
             for (Timeline_Configuration__mdt timelineType : listOfTimelineConfigurations) {
@@ -52,7 +50,6 @@ public with sharing class TimelineService {
                     if (timelineType.Object_Name__c == 'ContentDocumentLink') {
                         objectLabel = System.Label.Timeline_Label_Files;
                     }
-
                     if (timelineType.Tooltip_Object_Name__c != null && timelineType.Tooltip_Object_Name__c != '') {
                         objectLabel = ((SObject) (Type.forName(
                                     'Schema.' + String.valueOf(timelineType.Tooltip_Object_Name__c)
@@ -66,7 +63,6 @@ public with sharing class TimelineService {
                     mapOfTimelineTypes.put(timelineType.Object_Name__c, objectLabel);
                 }
             }
-
             return mapOfTimelineTypes;
         } catch (System.QueryException e) {
             throw new AuraHandledException(
@@ -96,14 +92,12 @@ public with sharing class TimelineService {
     ) {
         try {
             Map<String, String> parentDetails = getParentDetails(parentObjectId, parentFieldName);
-
             String parentObjectType = parentDetails.get('QueryObjectType');
             String parentConfigType = parentDetails.get('ConfigObjectType'); //NOPMD
             parentObjectId = parentDetails.get('Id');
 
             earliestRange = String.ValueOf((Decimal.ValueOf(earliestRange) * 12).intValue());
             latestRange = String.ValueOf((Decimal.ValueOf(latestRange) * 12).intValue());
-
             String queryTimelineConfiguration =
                 'SELECT Detail_Field__c, ' +
                 'Relationship_Name__c, ' +
@@ -126,7 +120,6 @@ public with sharing class TimelineService {
                 Test.isRunningTest() +
                 ' AND ' +
                 'Parent_Object__c =:parentConfigType'; //NOPMD
-
             List<Timeline_Configuration__mdt> listOfTimelineConfigurations = Database.query(queryTimelineConfiguration); //NOPMD
             Map<ID, Timeline_Configuration__mdt> timelineConfigObjectName = new Map<ID, Timeline_Configuration__mdt>(
                 [SELECT Id, Object_Name__c FROM Timeline_Configuration__mdt]
@@ -141,7 +134,6 @@ public with sharing class TimelineService {
             }
 
             Map<String, TimelineRecord> mapOfTimelineConfigurationRecords = new Map<String, TimelineRecord>();
-
             for (Timeline_Configuration__mdt timelineConfigurationRecord : listOfTimelineConfigurations) {
                 TimelineRecord timelineRecord = new timelineRecord();
                 Schema.SObjectType timelineRecordObjectType = Schema.getGlobalDescribe()
@@ -162,7 +154,6 @@ public with sharing class TimelineService {
                 timelineRecord.tooltipObject = timelineConfigurationRecord.Tooltip_Object_Name__c;
                 timelineRecord.drilldownIdField = timelineConfigurationRecord.Drilldown_Id_Field__c;
                 timelineRecord.inclusionField = timelineConfigurationRecord.Inclusion_Field__c;
-
                 mapOfTimelineConfigurationRecords.put(
                     timelineRecord.objectName + timelineRecord.relationshipName,
                     timelineRecord
@@ -175,7 +166,6 @@ public with sharing class TimelineService {
 
             for (String eachObject : mapOfTimelineConfigurationRecords.keyset()) {
                 TimelineRecord tcr = mapOfTimelineConfigurationRecords.get(eachObject);
-
                 if (childObjects.containsKey(eachObject)) {
                     String objName = String.valueOf(tcr.objectName);
                     String tooltipField = String.valueOf(tcr.fallbackTooltipField);
@@ -186,7 +176,6 @@ public with sharing class TimelineService {
                     String iconColourField = String.valueOf(tcr.iconBackgroundField);
 
                     String selectStatement = '(SELECT Id, ' + tcr.detailField + ', ' + tcr.positionDateField + '';
-
                     if (
                         (typeField != null && typeField != '') &&
                         (objName == 'Task' ||
@@ -206,7 +195,6 @@ public with sharing class TimelineService {
                     ) {
                         selectStatement = selectStatement + ', ActivityDate' + '';
                     }
-
                     if (
                         (objName == 'OpenActivity' || objName == 'ActivityHistory') &&
                         !selectStatement.contains('AlternateDetailId')
@@ -225,7 +213,6 @@ public with sharing class TimelineService {
                     if (drilldownIdField != null && drilldownIdField != '') {
                         selectStatement = selectStatement + ', ' + tcr.drilldownIdField + '';
                     }
-
                     if (tooltipIdField != null && tooltipIdField != '' && tcr.drilldownIdField <> tcr.tooltipIdField) {
                         selectStatement = selectStatement + ', ' + tcr.tooltipIdField + '';
                     }
@@ -246,7 +233,6 @@ public with sharing class TimelineService {
                     }
 
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
-
                     if (objName == 'OpenActivity') {
                         innerQuery =
                             innerQuery +
@@ -273,7 +259,6 @@ public with sharing class TimelineService {
                     }
                 }
             }
-
             innerQuery = innerQuery.removeEnd(',');
 
             String queryRecords =
@@ -294,7 +279,6 @@ public with sharing class TimelineService {
                 for (String fieldName : childRecordsAsMap.keySet()) {
                     if (childRecordsAsMap.get(fieldName) instanceof List<sObject>) {
                         List<sObject> childRecords = (List<sObject>) childRecordsAsMap.get(fieldName);
-
                         for (Sobject eachCh : childRecords) {
                             Map<String, String> mapData = new Map<String, String>();
 
@@ -306,7 +290,6 @@ public with sharing class TimelineService {
 
                             if (!dupeDataCheck.containsKey(myId)) {
                                 dupeDataCheck.put(myId, myId);
-
                                 Map<String, String> detailValues = getFieldValues(
                                     tr.detailField,
                                     eachCh,
@@ -338,7 +321,6 @@ public with sharing class TimelineService {
                                     eachCh,
                                     tr.objectName
                                 );
-
                                 Map<String, String> typeValues = getFieldValues(tr.type, eachCh, tr.objectName);
 
                                 String alternateDetailId = '';
@@ -367,7 +349,6 @@ public with sharing class TimelineService {
                                 } else {
                                     mapData.put('detailField', detailValues.get('value'));
                                 }
-
                                 mapData.put('detailFieldLabel', detailValues.get('label'));
                                 mapData.put('positionDateField', positionValues.get('label'));
                                 mapData.put('positionDateValue', positionValues.get('value'));
@@ -382,6 +363,14 @@ public with sharing class TimelineService {
                                 mapData.put('fallbackTooltipValue', fallbackValues.get('value'));
                                 mapData.put('type', typeValues.get('value'));
 
+                                // *** MODIFICATION START ***
+                                // Add a flag if the fallback is from CaseFeed, assuming it's the HTML Body
+                                mapData.put('fallbackIsHtml', 'false');
+                                if ('CaseFeed'.equals(tr.objectName)) {
+                                    mapData.put('fallbackIsHtml', 'true');
+                                }
+                                // *** MODIFICATION END ***
+
                                 if (iconValues.get('value') != null && iconValues.get('value') != '') {
                                     mapData.put('icon', iconValues.get('value'));
                                 } else {
@@ -393,7 +382,6 @@ public with sharing class TimelineService {
                                 } else {
                                     mapData.put('iconBackground', tr.iconBackground);
                                 }
-
                                 if (positionValues.get('value') != null && positionValues.get('value') != '') {
                                     listOfTimelineData.add(mapData);
                                 }
@@ -416,7 +404,6 @@ public with sharing class TimelineService {
 
     private static Map<String, String> getChildObjects(String parentObject) {
         Map<String, String> childRelatedObjects = new Map<String, String>();
-
         List<Schema.ChildRelationship> objectRelationships = ((SObject) (Type.forName('Schema.' + parentObject)
                 .newInstance()))
             .getSObjectType()
@@ -438,7 +425,6 @@ public with sharing class TimelineService {
         }
         return childRelatedObjects;
     }
-
     private static Map<String, String> getFieldValues(String field, Sobject records, String objectName) {
         Map<String, String> fieldDetails = new Map<String, String>();
 
@@ -465,7 +451,6 @@ public with sharing class TimelineService {
         } else {
             fieldStripped = field;
         }
-
         switch on objectFieldSplit.size() {
             when 1 {
                 fieldValue = String.valueOf(records.get(field));
@@ -514,7 +499,6 @@ public with sharing class TimelineService {
                 );
             }
         }
-
         //Case comments cannot be translated to an sobjectype from the ID
         if (String.valueOf(recordId).startsWith('00a')) {
             objectCheck = 'CaseComment';
@@ -537,7 +521,6 @@ public with sharing class TimelineService {
         fieldLabel = fieldMetadata.getLabel();
         fieldCanAccess = fieldMetadata.isAccessible();
         fieldType = String.valueOf(fieldMetadata.getType());
-
         if (fieldCanAccess == false) {
             fieldValue = '![' + fieldLabel + ']!';
         }
@@ -563,7 +546,6 @@ public with sharing class TimelineService {
                     .newInstance()))
                 .getSObjectType()
                 .getDescribe(SObjectDescribeOptions.DEFERRED);
-
             fieldDescribeCache.put(key, describeSobjects.fields.getMap().get(fieldName).getDescribe());
         }
 
@@ -588,7 +570,6 @@ public with sharing class TimelineService {
         String parentObjectType = String.valueOf(Id.valueOf(recordId).getSobjectType());
         String parentConfigType = parentObjectType;
         String fieldValue;
-
         if (field == 'Default_Picklist_Value') {
             fieldValue = recordId;
         } else {
@@ -606,7 +587,6 @@ public with sharing class TimelineService {
             SObjectAccessDecision securityDecision = Security.stripInaccessible(AccessType.READABLE, newDefaultRecord);
 
             Set<String> strippedFields = securityDecision.getRemovedFields().get(parentObjectType);
-
             if (strippedFields != null && strippedFields.contains(field)) {
                 String errorMsg =
                     'We can\'t display the timeline. You do not have access to the related field. ' +
@@ -629,7 +609,6 @@ public with sharing class TimelineService {
                     '(' +
                     fieldLabel +
                     ')';
-
                 throw new TimelineSetupException('{"type": "No-Data", "message": "' + errorMsg + '"}');
             }
 
@@ -648,7 +627,6 @@ public with sharing class TimelineService {
 
         return parentDetails;
     }
-
     private class TimelineRecord { //NOPMD
         private String relationshipName;
         private String parentObject;
@@ -675,7 +653,6 @@ public with sharing class TimelineService {
         private String alternateDetailId;
         private Id recordId;
     }
-
     private class FieldMetadata { //NOPMD
         private Boolean canAccess;
         private String label;
