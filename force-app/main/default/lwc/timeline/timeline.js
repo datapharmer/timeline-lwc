@@ -1478,8 +1478,8 @@ export default class timeline extends NavigationMixin(LightningElement) {
         }
         return summary;
     }
-}
 
-    get isApplyFilterDisabled() {
+        get isApplyFilterDisabled() {
         return !this.isFilterUpdated;
     }
+}
