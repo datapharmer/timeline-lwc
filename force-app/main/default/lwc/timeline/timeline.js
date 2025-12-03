@@ -83,9 +83,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
     mouseOverPositionValue;
     nubbinClass = 'slds-nubbin_left-top'; // Default nubbin class
 
-    // *** MODIFICATION START ***
     mouseOverFallbackIsHtml = false;
-    // *** MODIFICATION END ***
 
     currentParentField;
     filterValues = [];
@@ -202,7 +200,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 // eslint-disable-next-line no-prototype-builtins
                 if (timelineTs.hasOwnProperty(key)) {
                     this.filterValues.push(key);
-                    let tempFilter = [];
+                    let tempFilter = {};
 
                     tempFilter.label = timelineTs[key];
                     tempFilter.value = key;
@@ -497,10 +495,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
             recordCopy.tooltipObject = record.tooltipObject;
             recordCopy.drilldownId = record.drilldownId;
             recordCopy.alternateDetailId = record.alternateDetailId;
-            
-            // *** MODIFICATION START ***
             recordCopy.fallbackIsHtml = record.fallbackIsHtml === 'true';
-            // *** MODIFICATION END ***
 
             recordCopy.type = record.type;
             recordCopy.icon = record.icon;
@@ -829,9 +824,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
                         me.mouseOverFallbackField = d.fallbackTooltipField;
                         me.mouseOverFallbackValue = d.fallbackTooltipValue;
                         
-                        // *** MODIFICATION START ***
                         me.mouseOverFallbackIsHtml = d.fallbackIsHtml;
-                        // *** MODIFICATION END ***
 
                         me.mouseOverDetailLabel = d.detailFieldLabel;
                         me.mouseOverDetailValue = d.detailField;
@@ -1345,7 +1338,10 @@ export default class timeline extends NavigationMixin(LightningElement) {
     }
 
     get tooltipClass() {
-        return `tooltip-panel tooltip-popover slds-popover_panel ${this.nubbinClass}`;
+        // *** MODIFICATION START ***
+        // Add slds-theme_default to enforce standard popover styling
+        return `tooltip-panel tooltip-popover slds-popover_panel slds-theme_default ${this.nubbinClass}`;
+        // *** MODIFICATION END ***
     }
 
     toggleFilter() {
@@ -1482,7 +1478,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
         return summary;
     }
 
-        get isApplyFilterDisabled() {
+    get isApplyFilterDisabled() {
         return !this.isFilterUpdated;
     }
 }
