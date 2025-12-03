@@ -220,20 +220,15 @@ public with sharing class TimelineService {
 
                     String relationship = tcr.relationshipName;
 
-                    // *** MODIFICATION START ***
-                    // Issue 2: Support for filtering on CaseFeed Type
                     String optionalFilter = '';
                     if (tcr.inclusionField != null && tcr.inclusionField != '') {
                         String inclusion = tcr.inclusionField.trim();
-                        // Simple heuristic to check if it's a full clause or just a field name.
-                        // Full clauses usually contain spaces and operators.
                         if (inclusion.contains(' ') || inclusion.contains('=') || inclusion.contains('<') || inclusion.contains('>') || inclusion.toUpperCase().contains(' IN ')) {
                             optionalFilter = inclusion + ' AND ';
                         } else {
                             optionalFilter = inclusion + ' = true AND ';
                         }
                     }
-                    // *** MODIFICATION END ***
 
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
                     if (objName == 'OpenActivity') {
@@ -359,8 +354,6 @@ public with sharing class TimelineService {
 
                                 mapData.put('alternateDetailId', alternateDetailId);
 
-                                // *** MODIFICATION START ***
-                                // Issue 1: Handle CaseFeed of type TrackedChange and set fallbackIsHtml flag
                                 if ('CaseFeed'.equals(tr.objectName)) {
                                     if ('TrackedChange'.equals(String.valueOf(eachCh.get('Type')))) {
                                         List<SObject> trackedChanges = eachCh.getSObjects('FeedTrackedChanges');
@@ -368,8 +361,11 @@ public with sharing class TimelineService {
                                             String fallbackValue = '';
                                             for (SObject tc : trackedChanges) {
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
+                                                String fieldLabel = fieldNameApi; // Default to API name
                                                 Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameApi);
-                                                String fieldLabel = fieldMetadata.getLabel();
+                                                if (fieldMetadata != null) {
+                                                    fieldLabel = fieldMetadata.getLabel();
+                                                }
                                                 
                                                 String oldValue = String.valueOf(tc.get('OldValue'));
                                                 if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
@@ -392,7 +388,6 @@ public with sharing class TimelineService {
                                 } else {
                                     mapData.put('fallbackIsHtml', 'false');
                                 }
-                                // *** MODIFICATION END ***
 
                                 if (iconValues.get('value') != null && iconValues.get('value') != '') {
                                     mapData.put('icon', iconValues.get('value'));
@@ -535,10 +530,16 @@ public with sharing class TimelineService {
         }
 
         Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(objectCheck, fieldStripped);
+        fieldCanAccess = true; // Assume access, then check
+        
+        if (fieldMetadata != null) {
+            fieldLabel = fieldMetadata.getLabel();
+            fieldCanAccess = fieldMetadata.isAccessible();
+            fieldType = String.valueOf(fieldMetadata.getType());
+        } else {
+            fieldLabel = fieldStripped; // Fallback to API name
+        }
 
-        fieldLabel = fieldMetadata.getLabel();
-        fieldCanAccess = fieldMetadata.isAccessible();
-        fieldType = String.valueOf(fieldMetadata.getType());
         if (fieldCanAccess == false) {
             fieldValue = '![' + fieldLabel + ']!';
         }
@@ -554,6 +555,9 @@ public with sharing class TimelineService {
     }
 
     private static Schema.DescribeFieldResult getDescribeInfo(String objectName, String fieldName) {
+        if (String.isBlank(fieldName)) {
+            return null;
+        }
         String key = objectName + fieldName;
 
         if (!fieldDescribeCache.containsKey(key)) {
@@ -563,7 +567,20 @@ public with sharing class TimelineService {
                     .newInstance()))
                 .getSObjectType()
                 .getDescribe(SObjectDescribeOptions.DEFERRED);
-            fieldDescribeCache.put(key, describeSobjects.fields.getMap().get(fieldName).getDescribe());
+            
+            Map<String, Schema.SObjectField> fieldMap = describeSobjects.fields.getMap();
+            Schema.SObjectField fieldToken = fieldMap.get(fieldName);
+
+            // If not found, it could be a relationship name like 'owner'. Try appending 'Id'.
+            if (fieldToken == null) {
+                fieldToken = fieldMap.get(fieldName + 'Id');
+            }
+            
+            if (fieldToken != null) {
+                fieldDescribeCache.put(key, fieldToken.getDescribe());
+            } else {
+                fieldDescribeCache.put(key, null); // Field not found, cache null to prevent crash
+            }
         }
 
         return fieldDescribeCache.get(key);
