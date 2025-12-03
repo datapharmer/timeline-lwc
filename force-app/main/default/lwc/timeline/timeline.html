@@ -52,14 +52,17 @@
         <template if:true={showFallbackTooltip}>
             <div class="slds-popover__body">
                 <!-- *** MODIFICATION START *** -->
-                <!-- Remove field labels and extra div wrapper for rich text -->
-                <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverPositionValue}</p>
-                <template if:false={mouseOverFallbackIsHtml}>
-                    <p class="s-text-body_regular slds-m-bottom_small">{mouseOverFallbackValue}</p>
-                </template>
-                <template if:true={mouseOverFallbackIsHtml}>
-                    <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
-                </template>
+                <!-- Add a theme wrapper to ensure correct SLDS styling -->
+                <div class="slds-theme_default">
+                    <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverPositionValue}</p>
+                    <template if:false={mouseOverFallbackIsHtml}>
+                        <!-- Corrected class name typo from s- to slds- -->
+                        <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverFallbackValue}</p>
+                    </template>
+                    <template if:true={mouseOverFallbackIsHtml}>
+                        <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
+                    </template>
+                </div>
                 <!-- *** MODIFICATION END *** -->
             </div>
         </template>
