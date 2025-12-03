@@ -118,7 +118,7 @@
         </div>
         <div class="slds-panel__footer">
             <lightning-button label={label.BUTTON_CANCEL} onclick={cancelFilter} class="slds-m-right_small"></lightning-button>
-            <lightning-button label={label.BUTTON_APPLY} variant="brand" onclick={applyFilter} disabled={!isFilterUpdated}></lightning-button>
+            <lightning-button label={label.BUTTON_APPLY} variant="brand" onclick={applyFilter} disabled={isApplyFilterDisabled}></lightning-button>
         </div>
     </div>
 </template>
