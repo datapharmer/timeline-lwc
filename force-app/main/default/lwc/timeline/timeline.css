@@ -390,3 +390,12 @@
     padding-right: 5px;
     padding-left: 5px;
 }
+
+lightning-formatted-rich-text p,
+lightning-formatted-rich-text span,
+lightning-formatted-rich-text a,
+lightning-formatted-rich-text li,
+lightning-formatted-rich-text strong,
+lightning-formatted-rich-text em {
+    color: #000000 !important; /* Black color */
+}
