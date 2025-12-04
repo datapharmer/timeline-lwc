@@ -347,7 +347,13 @@ public with sharing class TimelineService {
                                 mapData.put('tooltipId', tooltipIdValues.get('value'));
                                 mapData.put('tooltipObject', tr.tooltipObject);
                                 mapData.put('fallbackTooltipValue', fallbackValues.get('value'));
-                                mapData.put('type', typeValues.get('value'));
+                                String typeValue = typeValues.get('value');
+                                // For CaseFeed records, format the 'Type' field (e.g., 'TrackedChange') for better display.
+                                if ('CaseFeed'.equals(tr.objectName) && typeValue != null) {
+                                    typeValue = formatCamelCase(typeValue);
+                                }
+                                
+                                mapData.put('type', typeValue);
                                 String alternateDetailId = '';
 
                                 if (
