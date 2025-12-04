@@ -329,12 +329,19 @@ public with sharing class TimelineService {
                                 Map<String, String> typeValues = getFieldValues(tr.type, eachCh, tr.objectName);
                                 mapData.put('objectId', myId);
                                 mapData.put('parentObject', parentObjectType);
-                                if (detailValues.get('value') == '' || detailValues.get('value') == null) {
-                                    //NOPMD
+                                String detailValue = detailValues.get('value');
+
+                                // For CaseFeed items, if the detail field is configured to be 'Type', format it for better display.
+                                if ('CaseFeed'.equals(tr.objectName) && 'Type'.equalsIgnoreCase(tr.detailField) && detailValue != null) {
+                                    detailValue = formatCamelCase(detailValue);
+                                }
+                                
+                                if (String.isBlank(detailValue)) {
                                     mapData.put('detailField', '[' + detailValues.get('label') + ']');
                                 } else {
-                                    mapData.put('detailField', detailValues.get('value'));
+                                    mapData.put('detailField', detailValue);
                                 }
+
                                 mapData.put('detailFieldLabel', detailValues.get('label'));
                                 mapData.put('positionDateField', positionValues.get('label'));
                                 mapData.put('positionDateValue', positionValues.get('value'));
