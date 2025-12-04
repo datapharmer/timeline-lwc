@@ -218,17 +218,13 @@ public with sharing class TimelineService {
                         }
                     }
                     if (objName == 'CaseFeed') {
-                        // Exclude specific feed types to prevent duplicates on the timeline.
-                        optionalFilter += 'Type NOT IN (\'CaseCommentPost\', \'EmailMessageEvent\') AND ';
-                    
                         // We need the Body field for ChangeStatusPost and TextPost.
-                        // To prevent a "duplicate field" error, add it only if it's not already in the query.
-                        // A regex with word boundaries (\b) is the safest way to check for the whole word 'Body'
-                        // and avoid partial matches on fields like 'CommentBody'.
-                        Pattern bodyPattern = Pattern.compile('\\bBody\\b', Pattern.CASE_INSENSITIVE);
-                        if (!bodyPattern.matcher(selectStatement).find()) {
+                        // Add it only if it's not already being queried as the detail or position field
+                        // to prevent a "duplicate field" SOQL error.
+                        if (!'Body'.equalsIgnoreCase(tcr.detailField) && !'Body'.equalsIgnoreCase(tcr.positionDateField)) {
                             selectStatement += ', Body';
                         }
+                        selectStatement += ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
                     }
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
                     if (objName == 'OpenActivity') {
