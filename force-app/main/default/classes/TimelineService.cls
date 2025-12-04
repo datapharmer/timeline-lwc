@@ -230,6 +230,12 @@ public with sharing class TimelineService {
                         }
                     }
 
+                    // Exclude CaseCommentPost records from the CaseFeed query to prevent duplicates,
+                    // as CaseComment records are handled separately.
+                    if (objName == 'CaseFeed') {
+                        optionalFilter += 'Type != \'CaseCommentPost\' AND ';
+                    }
+
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
                     if (objName == 'OpenActivity') {
                         innerQuery =
