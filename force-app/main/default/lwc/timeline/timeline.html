@@ -50,12 +50,10 @@
     <div class={tooltipClass} role="dialog" style="visibility: hidden; min-width: 250px; max-width: 400px;">
         <!-- Fallback Tooltip for things like CaseFeed that don't support UI API -->
         <template if:true={showFallbackTooltip}>
-            <div
-                <!-- *** MODIFICATION START *** -->
+            <div>
                 <div>
                     <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverPositionValue}</p>
                     <template if:false={mouseOverFallbackIsHtml}>
-                        <!-- Corrected class name typo from s- to slds- -->
                         <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverFallbackValue}</p>
                     </template>
                     <template if:true={mouseOverFallbackIsHtml}>
