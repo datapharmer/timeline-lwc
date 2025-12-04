@@ -1338,10 +1338,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
     }
 
     get tooltipClass() {
-        // *** MODIFICATION START ***
-        // Revert this change, as the theme wrapper is now in the HTML
         return `tooltip-panel tooltip-popover slds-popover_panel ${this.nubbinClass}`;
-        // *** MODIFICATION END ***
     }
 
     toggleFilter() {
