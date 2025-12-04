@@ -154,59 +154,47 @@ public with sharing class TimelineService {
                 TimelineRecord tcr = mapOfTimelineConfigurationRecords.get(eachObject);
                 if (childObjects.containsKey(eachObject)) {
                     String objName = String.valueOf(tcr.objectName);
-                    String tooltipField = String.valueOf(tcr.fallbackTooltipField);
-                    String tooltipIdField = String.valueOf(tcr.tooltipIdField);
-                    String drilldownIdField = String.valueOf(tcr.drilldownIdField);
-                    String typeField = String.valueOf(tcr.type);
-                    String iconField = String.valueOf(tcr.iconField);
-                    String iconColourField = String.valueOf(tcr.iconBackgroundField);
-                    String selectStatement = '(SELECT Id, ' + tcr.detailField + ', ' + tcr.positionDateField + '';
-                    if (
-                        (typeField != null && typeField != '') &&
-                        (objName == 'Task' ||
-                        objName == 'OpenActivity' ||
-                        objName == 'ActivityHistory' ||
-                        objName == 'TaskRelation' ||
-                        objName == 'ContentDocumentLink' ||
-                        objName == 'TaskWhoRelation' ||
-                        objName == 'LookedUpFromActivity' ||
-                        objName == 'CaseFeed')
-                    ) {
-                        selectStatement = selectStatement + ', ' + tcr.type + '';
+
+                    // **FIX START** 
+                    // Use a Set to automatically prevent duplicate fields in the query
+                    Set<String> fieldsToQuery = new Set<String>{'Id'};
+                    if(String.isNotBlank(tcr.detailField)) fieldsToQuery.add(tcr.detailField);
+                    if(String.isNotBlank(tcr.positionDateField)) fieldsToQuery.add(tcr.positionDateField);
+                    
+                    if (String.isNotBlank(tcr.type) && 
+                        (objName == 'Task' || objName == 'OpenActivity' || objName == 'ActivityHistory' || objName == 'TaskRelation' ||
+                         objName == 'ContentDocumentLink' || objName == 'TaskWhoRelation' || objName == 'LookedUpFromActivity' || objName == 'CaseFeed')) {
+                        fieldsToQuery.add(tcr.type);
                     }
-                    if (
-                        (objName == 'OpenActivity' || objName == 'ActivityHistory') &&
-                        !selectStatement.contains('ActivityDate')
-                    ) {
-                        selectStatement = selectStatement + ', ActivityDate' + '';
+                    
+                    if (objName == 'OpenActivity' || objName == 'ActivityHistory') {
+                        fieldsToQuery.add('ActivityDate');
+                        fieldsToQuery.add('AlternateDetailId');
                     }
-                    if (
-                        (objName == 'OpenActivity' || objName == 'ActivityHistory') &&
-                        !selectStatement.contains('AlternateDetailId')
-                    ) {
-                        selectStatement = selectStatement + ', AlternateDetailId' + '';
-                    }
+                    
                     if (objName == 'ContentDocumentLink') {
-                        selectStatement = selectStatement + ', ' + 'ContentDocumentId' + '';
+                        fieldsToQuery.add('ContentDocumentId');
                     }
+
                     if (objName == 'CaseFeed') {
-                        selectStatement = selectStatement + ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
+                        // Body is needed for certain feed types. The Set handles deduplication if Body is already configured in another field.
+                        fieldsToQuery.add('Body');
                     }
-                    if (tooltipField != null && tooltipField != '' && tcr.detailField <> tcr.fallbackTooltipField) {
-                        selectStatement = selectStatement + ', ' + tcr.fallbackTooltipField + '';
+
+                    if (String.isNotBlank(tcr.fallbackTooltipField)) fieldsToQuery.add(tcr.fallbackTooltipField);
+                    if (String.isNotBlank(tcr.drilldownIdField)) fieldsToQuery.add(tcr.drilldownIdField);
+                    if (String.isNotBlank(tcr.tooltipIdField)) fieldsToQuery.add(tcr.tooltipIdField);
+                    if (String.isNotBlank(tcr.iconField)) fieldsToQuery.add(tcr.iconField);
+                    if (String.isNotBlank(tcr.iconBackgroundField)) fieldsToQuery.add(tcr.iconBackgroundField);
+
+                    // Build the SELECT statement from the unique set of fields
+                    String selectStatement = '(SELECT ' + String.join(new List<String>(fieldsToQuery), ', ');
+
+                    // Append subqueries separately to prevent duplication
+                    if (objName == 'CaseFeed') {
+                        selectStatement += ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
                     }
-                    if (drilldownIdField != null && drilldownIdField != '') {
-                        selectStatement = selectStatement + ', ' + tcr.drilldownIdField + '';
-                    }
-                    if (tooltipIdField != null && tooltipIdField != '' && tcr.drilldownIdField <> tcr.tooltipIdField) {
-                        selectStatement = selectStatement + ', ' + tcr.tooltipIdField + '';
-                    }
-                    if (iconField != null && iconField != '') {
-                        selectStatement = selectStatement + ', ' + tcr.iconField + '';
-                    }
-                    if (iconColourField != null && iconColourField != '') {
-                        selectStatement = selectStatement + ', ' + tcr.iconBackgroundField + '';
-                    }
+                    
                     String relationship = tcr.relationshipName;
                     String optionalFilter = '';
                     if (tcr.inclusionField != null && tcr.inclusionField != '') {
@@ -217,16 +205,10 @@ public with sharing class TimelineService {
                             optionalFilter = inclusion + ' = true AND ';
                         }
                     }
-                    if (objName == 'CaseFeed') {
-                        // We need the Body field for ChangeStatusPost and TextPost.
-                        // Add it only if it's not already being queried as the detail or position field
-                        // to prevent a "duplicate field" SOQL error.
-                        if (!'Body'.equalsIgnoreCase(tcr.detailField) && !'Body'.equalsIgnoreCase(tcr.positionDateField)) {
-                            selectStatement += ', Body';
-                        }
-                        selectStatement += ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
-                    }
+                    
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
+                    // **FIX END**
+
                     if (objName == 'OpenActivity') {
                         innerQuery =
                             innerQuery +
@@ -295,7 +277,6 @@ public with sharing class TimelineService {
                                 } else {
                                     mapData.put('detailField', detailValue);
                                 }
-
                                 Map<String, String> positionValues = getFieldValues(
                                     tr.positionDateField,
                                     eachCh,
@@ -325,7 +306,6 @@ public with sharing class TimelineService {
                                 Map<String, String> typeValues = getFieldValues(tr.type, eachCh, tr.objectName);
                                 mapData.put('objectId', myId);
                                 mapData.put('parentObject', parentObjectType);
-
                                 mapData.put('detailFieldLabel', detailValues.get('label'));
                                 mapData.put('positionDateField', positionValues.get('label'));
                                 mapData.put('positionDateValue', positionValues.get('value'));
@@ -347,7 +327,6 @@ public with sharing class TimelineService {
                                     alternateDetailId = String.valueOf(eachCh.get('AlternateDetailId'));
                                 }
                                 mapData.put('alternateDetailId', alternateDetailId);
-
                                 if ('CaseFeed'.equals(tr.objectName)) {
                                     String feedType = String.valueOf(eachCh.get('Type'));
                                     if ('TrackedChange'.equals(feedType)) {
@@ -384,11 +363,9 @@ public with sharing class TimelineService {
                                         }
                                     }
                                 }
-
                                 // To honor the request that all fallback tooltips render as rich text,
                                 // this flag is set to true. The LWC will always use lightning-formatted-rich-text.
                                 mapData.put('fallbackIsHtml', 'true');
-
                                 if (iconValues.get('value') != null && iconValues.get('value') != '') {
                                     mapData.put('icon', iconValues.get('value'));
                                 } else {
