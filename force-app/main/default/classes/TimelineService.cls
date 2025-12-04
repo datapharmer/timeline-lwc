@@ -233,7 +233,7 @@ public with sharing class TimelineService {
                     // Exclude CaseCommentPost records from the CaseFeed query to prevent duplicates,
                     // as CaseComment records are handled separately.
                     if (objName == 'CaseFeed') {
-                        optionalFilter += 'Type != \'CaseCommentPost\' AND ';
+                        optionalFilter += 'Type NOT IN (\'CaseCommentPost\', \'EmailMessageEvent\') AND ';
                     }
 
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
