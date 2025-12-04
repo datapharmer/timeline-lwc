@@ -376,7 +376,6 @@ public with sharing class TimelineService {
                                                     fieldLabel = fieldMetadata.getLabel();
                                                 }
                                                 
-                                                // Now, convert the value to a String since we know it's not the Id record.
                                                 String oldValue = String.valueOf(oldValueObject);
                                                 if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
                                             
