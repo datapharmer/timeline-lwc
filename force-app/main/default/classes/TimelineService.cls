@@ -190,8 +190,10 @@ public with sharing class TimelineService {
                         selectStatement = selectStatement + ', ' + 'ContentDocumentId' + '';
                     }
                     if (objName == 'CaseFeed') {
-                        // Ensure Body is always queried to support TextPost, ChangeStatusPost, etc.
-                        if (!selectStatement.contains(', Body')) {
+                        // We need the Body field for ChangeStatusPost and TextPost.
+                        // Add it only if it's not already being queried as the detail or position field
+                        // to prevent a "duplicate field" SOQL error.
+                        if (!'Body'.equalsIgnoreCase(tcr.detailField) && !'Body'.equalsIgnoreCase(tcr.positionDateField)) {
                             selectStatement += ', Body';
                         }
                         selectStatement += ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
