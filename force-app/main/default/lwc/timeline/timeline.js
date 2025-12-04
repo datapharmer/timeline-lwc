@@ -49,9 +49,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
     @api recordId; //current record id of lead, case, opportunity, contact or account
 
     @api flexipageRegionWidth; //SMALL, MEDIUM and LARGE based on where the component is placed in App Builder templates
-
-    showCaseCommentModal = false;
-    caseCommentIdToEdit;
     
     isLanguageRightToLeft = false;
     
@@ -668,8 +665,15 @@ export default class timeline extends NavigationMixin(LightningElement) {
                                 break;
                             }
                             case 'CaseComment': {
-                                me.caseCommentIdToEdit = d.recordId;
-                                me.showCaseCommentModal = true;
+                                // Use NavigationMixin to open the standard edit modal
+                                me[NavigationMixin.Navigate]({
+                                    type: 'standard__recordPage',
+                                    attributes: {
+                                        recordId: d.recordId,
+                                        objectApiName: 'CaseComment',
+                                        actionName: 'edit'
+                                    }
+                                });
                                 break;
                             }
                             default: {
@@ -790,8 +794,15 @@ export default class timeline extends NavigationMixin(LightningElement) {
                                 break;
                             }
                             case 'CaseComment': {
-                                me.caseCommentIdToEdit = d.recordId;
-                                me.showCaseCommentModal = true;
+                                // Use NavigationMixin to open the standard edit modal
+                                me[NavigationMixin.Navigate]({
+                                    type: 'standard__recordPage',
+                                    attributes: {
+                                        recordId: d.recordId,
+                                        objectApiName: 'CaseComment',
+                                        actionName: 'edit'
+                                    }
+                                });
                                 break;
                             }
                             default: {
@@ -1470,44 +1481,6 @@ export default class timeline extends NavigationMixin(LightningElement) {
                 this.label.ITEMS;
         }
         return summary;
-    }
-    
-    handleCloseCommentModal() {
-        this.showCaseCommentModal = false;
-    }
-  
-    handleCommentSubmit(event) {
-        event.preventDefault(); // Stop the form from submitting on its own
-        const fields = event.detail.fields;
-        
-        // Set IsPublished to true, which is required to save a comment.
-        fields.IsPublished = true;
-        
-        // Submit the form with the modified fields
-        this.template.querySelector('lightning-record-edit-form').submit(fields);
-    }
-    
-    handleCommentSaved() {
-        this.showCaseCommentModal = false;
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Success',
-                message: 'Case comment updated.',
-                variant: 'success'
-            })
-        );
-        // Refresh the timeline to show the updated data
-        this.processTimeline();
-    }
-
-    handleCommentError(event) {
-        this.dispatchEvent(
-            new ShowToastEvent({
-                title: 'Error updating record',
-                message: event.detail.message,
-                variant: 'error'
-            })
-        );
     }
     
     get isApplyFilterDisabled() {
