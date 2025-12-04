@@ -50,10 +50,9 @@
     <div class={tooltipClass} role="dialog" style="visibility: hidden; min-width: 250px; max-width: 400px;">
         <!-- Fallback Tooltip for things like CaseFeed that don't support UI API -->
         <template if:true={showFallbackTooltip}>
-            <div class="slds-popover__body">
+            <div
                 <!-- *** MODIFICATION START *** -->
-                <!-- Add a theme wrapper to ensure correct SLDS styling -->
-                <div class="slds-theme_default">
+                <div>
                     <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverPositionValue}</p>
                     <template if:false={mouseOverFallbackIsHtml}>
                         <!-- Corrected class name typo from s- to slds- -->
@@ -63,7 +62,6 @@
                         <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
                     </template>
                 </div>
-                <!-- *** MODIFICATION END *** -->
             </div>
         </template>
         
