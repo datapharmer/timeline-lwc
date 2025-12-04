@@ -360,6 +360,15 @@ public with sharing class TimelineService {
                                         if (trackedChanges != null && !trackedChanges.isEmpty()) {
                                             String fallbackValue = '';
                                             for (SObject tc : trackedChanges) {
+                                                // Get the value as a generic Object to check its type.
+                                                Object oldValueObject = tc.get('OldValue');
+                                            
+                                                // For lookups, Salesforce creates a record with names (String) and a record with Ids (Id).
+                                                // This check safely identifies and skips the record containing only Ids.
+                                                if (oldValueObject instanceof Id) {
+                                                    continue; // Skip to the next tracked change.
+                                                }
+                                            
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
                                                 String fieldLabel = fieldNameApi; // Default to API name
                                                 Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameApi);
@@ -367,9 +376,10 @@ public with sharing class TimelineService {
                                                     fieldLabel = fieldMetadata.getLabel();
                                                 }
                                                 
-                                                String oldValue = String.valueOf(tc.get('OldValue'));
+                                                // Now, convert the value to a String since we know it's not the Id record.
+                                                String oldValue = String.valueOf(oldValueObject);
                                                 if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
-                                                
+                                            
                                                 String newValue = String.valueOf(tc.get('NewValue'));
                                                 if (newValue == null || 'null'.equalsIgnoreCase(newValue)) newValue = '<i>empty</i>';
                                                 
