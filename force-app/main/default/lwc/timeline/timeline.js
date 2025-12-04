@@ -1475,7 +1475,18 @@ export default class timeline extends NavigationMixin(LightningElement) {
     handleCloseCommentModal() {
         this.showCaseCommentModal = false;
     }
-
+  
+    handleCommentSubmit(event) {
+        event.preventDefault(); // Stop the form from submitting on its own
+        const fields = event.detail.fields;
+        
+        // Set IsPublished to true, which is required to save a comment.
+        fields.IsPublished = true;
+        
+        // Submit the form with the modified fields
+        this.template.querySelector('lightning-record-edit-form').submit(fields);
+    }
+    
     handleCommentSaved() {
         this.showCaseCommentModal = false;
         this.dispatchEvent(
