@@ -192,7 +192,6 @@ public with sharing class TimelineService {
                     
                     innerQuery += selectStatement + ' FROM ' + tcr.relationshipName;
 
-                    // **FIX START**: Refactored WHERE clause logic
                     List<String> whereClauses = new List<String>();
                     if (String.isNotBlank(tcr.inclusionField)) {
                         String inclusion = tcr.inclusionField.trim();
@@ -207,22 +206,17 @@ public with sharing class TimelineService {
                         if (!whereClauses.isEmpty()) {
                             innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ');
                         }
-                        // For OpenActivity, use ActivityDate for ordering
                         innerQuery += ' ORDER BY ActivityDate ASC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
                     } else if (objName == 'ActivityHistory' || objName == 'CaseFeed') {
-                        // For history-like objects, filter but don't limit by date range. Order by date descending.
                         if (!whereClauses.isEmpty()) {
                             innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ');
                         }
-                        // Use the configured position date field for ordering
                         innerQuery += ' ORDER BY ' + tcr.positionDateField + ' DESC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
                     } else {
-                        // For all other objects, apply the date range filter
                         whereClauses.add(tcr.positionDateField + ' >= LAST_N_MONTHS:' + earliestRange);
                         whereClauses.add(tcr.positionDateField + ' <= NEXT_N_MONTHS:' + latestRange);
                         innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ') + '),';
                     }
-                    // **FIX END**
                 }
             }
             innerQuery = innerQuery.removeEnd(',');
@@ -244,10 +238,15 @@ public with sharing class TimelineService {
                             String sObjTypeName = String.valueOf(eachCh.getSObjectType());
                             TimelineRecord tr = mapOfTimelineConfigurationRecords.get(sObjTypeName + fieldName);
                             
-                            // **FIX**: Skip records from unconfigured object types (e.g., EmailMessageEvent)
                             if (tr == null) {
                                 continue;
                             }
+                            
+                            // **FIX START**: Exclude 'ChangeStatusPost' feed items
+                            if ('CaseFeed'.equals(tr.objectName) && 'ChangeStatusPost'.equals(String.valueOf(eachCh.get('Type')))) {
+                                continue;
+                            }
+                            // **FIX END**
 
                             Map<String, String> mapData = new Map<String, String>();
                             String myId = eachCh.Id;
@@ -263,7 +262,6 @@ public with sharing class TimelineService {
                                     tr.objectName
                                 );
                                 String detailValue = detailValues.get('value');
-                                // For CaseFeed items, if the detail field is configured to be 'Type', format it for better display.
                                 if ('CaseFeed'.equals(tr.objectName) && 'Type'.equalsIgnoreCase(tr.detailField) && detailValue != null) {
                                     detailValue = formatCamelCase(detailValue);
                                 }
@@ -349,17 +347,8 @@ public with sharing class TimelineService {
                                         } else {
                                             mapData.put('fallbackTooltipValue', 'Field change details not available.');
                                         }
-                                    } else if ('ChangeStatusPost'.equals(feedType)) {
-                                        String bodyContent = String.valueOf(eachCh.get('Body'));
-                                        if (String.isNotBlank(bodyContent)) {
-                                            mapData.put('fallbackTooltipValue', bodyContent);
-                                        } else {
-                                            mapData.put('fallbackTooltipValue', 'Case status was changed.');
-                                        }
                                     }
                                 }
-                                // To honor the request that all fallback tooltips render as rich text,
-                                // this flag is set to true. The LWC will always use lightning-formatted-rich-text.
                                 mapData.put('fallbackIsHtml', 'true');
                                 if (iconValues.get('value') != null && iconValues.get('value') != '') {
                                     mapData.put('icon', iconValues.get('value'));
