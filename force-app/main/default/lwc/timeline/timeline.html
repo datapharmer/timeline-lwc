@@ -51,15 +51,13 @@
         <!-- Fallback Tooltip for things like CaseFeed that don't support UI API -->
         <template if:true={showFallbackTooltip}>
             <div>
-                <div>
-                    <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverPositionValue}</p>
-                    <template if:false={mouseOverFallbackIsHtml}>
-                        <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverFallbackValue}</p>
-                    </template>
-                    <template if:true={mouseOverFallbackIsHtml}>
-                        <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
-                    </template>
-                </div>
+                <p>{mouseOverPositionValue}</p>
+                <template if:false={mouseOverFallbackIsHtml}>
+                    <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverFallbackValue}</p>
+                </template>
+                <template if:true={mouseOverFallbackIsHtml}>
+                    <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
+                </template>
             </div>
         </template>
         
