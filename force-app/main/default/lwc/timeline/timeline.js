@@ -50,6 +50,11 @@ export default class timeline extends NavigationMixin(LightningElement) {
 
     @api flexipageRegionWidth; //SMALL, MEDIUM and LARGE based on where the component is placed in App Builder templates
 
+    showCaseCommentModal = false;
+    caseCommentIdToEdit;
+    
+    isLanguageRightToLeft = false;
+    
     isLanguageRightToLeft = false;
     timelineWidth = 'LARGE';
     timelineTypes;
@@ -663,12 +668,8 @@ export default class timeline extends NavigationMixin(LightningElement) {
                                 break;
                             }
                             case 'CaseComment': {
-                                const toastEvent = new ShowToastEvent({
-                                    title: me.toast.NAVIGATION_HEADER,
-                                    message: me.toast.NAVIGATION_BODY,
-                                    messageData: [d.objectName]
-                                });
-                                this.dispatchEvent(toastEvent);
+                                me.caseCommentIdToEdit = d.recordId;
+                                me.showCaseCommentModal = true;
                                 break;
                             }
                             default: {
@@ -789,12 +790,8 @@ export default class timeline extends NavigationMixin(LightningElement) {
                                 break;
                             }
                             case 'CaseComment': {
-                                const toastEvent = new ShowToastEvent({
-                                    title: me.toast.NAVIGATION_HEADER,
-                                    message: me.toast.NAVIGATION_BODY,
-                                    messageData: [d.objectName]
-                                });
-                                this.dispatchEvent(toastEvent);
+                                me.caseCommentIdToEdit = d.recordId;
+                                me.showCaseCommentModal = true;
                                 break;
                             }
                             default: {
@@ -1474,7 +1471,34 @@ export default class timeline extends NavigationMixin(LightningElement) {
         }
         return summary;
     }
+    
+    handleCloseCommentModal() {
+        this.showCaseCommentModal = false;
+    }
 
+    handleCommentSaved() {
+        this.showCaseCommentModal = false;
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Success',
+                message: 'Case comment updated.',
+                variant: 'success'
+            })
+        );
+        // Refresh the timeline to show the updated data
+        this.processTimeline();
+    }
+
+    handleCommentError(event) {
+        this.dispatchEvent(
+            new ShowToastEvent({
+                title: 'Error updating record',
+                message: event.detail.message,
+                variant: 'error'
+            })
+        );
+    }
+    
     get isApplyFilterDisabled() {
         return !this.isFilterUpdated;
     }
