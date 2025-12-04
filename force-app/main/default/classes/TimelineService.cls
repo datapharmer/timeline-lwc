@@ -153,10 +153,8 @@ public with sharing class TimelineService {
             for (String eachObject : mapOfTimelineConfigurationRecords.keyset()) {
                 TimelineRecord tcr = mapOfTimelineConfigurationRecords.get(eachObject);
                 if (childObjects.containsKey(eachObject)) {
-                    String objName = String.valueOf(tcr.objectName);
-
-                    // **FIX START** 
-                    // Use a Set to automatically prevent duplicate fields in the query
+                    String objName = tcr.objectName;
+                    
                     Set<String> fieldsToQuery = new Set<String>{'Id'};
                     if(String.isNotBlank(tcr.detailField)) fieldsToQuery.add(tcr.detailField);
                     if(String.isNotBlank(tcr.positionDateField)) fieldsToQuery.add(tcr.positionDateField);
@@ -177,7 +175,6 @@ public with sharing class TimelineService {
                     }
 
                     if (objName == 'CaseFeed') {
-                        // Body is needed for certain feed types. The Set handles deduplication if Body is already configured in another field.
                         fieldsToQuery.add('Body');
                     }
 
@@ -187,52 +184,45 @@ public with sharing class TimelineService {
                     if (String.isNotBlank(tcr.iconField)) fieldsToQuery.add(tcr.iconField);
                     if (String.isNotBlank(tcr.iconBackgroundField)) fieldsToQuery.add(tcr.iconBackgroundField);
 
-                    // Build the SELECT statement from the unique set of fields
                     String selectStatement = '(SELECT ' + String.join(new List<String>(fieldsToQuery), ', ');
 
-                    // Append subqueries separately to prevent duplication
                     if (objName == 'CaseFeed') {
                         selectStatement += ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
                     }
                     
-                    String relationship = tcr.relationshipName;
-                    String optionalFilter = '';
-                    if (tcr.inclusionField != null && tcr.inclusionField != '') {
+                    innerQuery += selectStatement + ' FROM ' + tcr.relationshipName;
+
+                    // **FIX START**: Refactored WHERE clause logic
+                    List<String> whereClauses = new List<String>();
+                    if (String.isNotBlank(tcr.inclusionField)) {
                         String inclusion = tcr.inclusionField.trim();
                         if (inclusion.contains(' ') || inclusion.contains('=') || inclusion.contains('<') || inclusion.contains('>') || inclusion.toUpperCase().contains(' IN ')) {
-                            optionalFilter = inclusion + ' AND ';
+                            whereClauses.add(inclusion);
                         } else {
-                            optionalFilter = inclusion + ' = true AND ';
+                            whereClauses.add(inclusion + ' = true');
                         }
                     }
-                    
-                    innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
-                    // **FIX END**
 
                     if (objName == 'OpenActivity') {
-                        innerQuery =
-                            innerQuery +
-                            ' ORDER BY ' +
-                            'ActivityDate ASC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
-                    } else if (objName == 'ActivityHistory') {
-                        innerQuery =
-                            innerQuery +
-                            ' ORDER BY ' +
-                            'ActivityDate DESC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
+                        if (!whereClauses.isEmpty()) {
+                            innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ');
+                        }
+                        // For OpenActivity, use ActivityDate for ordering
+                        innerQuery += ' ORDER BY ActivityDate ASC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
+                    } else if (objName == 'ActivityHistory' || objName == 'CaseFeed') {
+                        // For history-like objects, filter but don't limit by date range. Order by date descending.
+                        if (!whereClauses.isEmpty()) {
+                            innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ');
+                        }
+                        // Use the configured position date field for ordering
+                        innerQuery += ' ORDER BY ' + tcr.positionDateField + ' DESC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
                     } else {
-                        innerQuery =
-                            innerQuery +
-                            ' WHERE ' +
-                            optionalFilter +
-                            tcr.positionDateField +
-                            '>= LAST_N_MONTHS:' +
-                            earliestRange +
-                            ' AND ' +
-                            tcr.positionDateField +
-                            ' <= NEXT_N_MONTHS:' +
-                            latestRange +
-                            '),';
+                        // For all other objects, apply the date range filter
+                        whereClauses.add(tcr.positionDateField + ' >= LAST_N_MONTHS:' + earliestRange);
+                        whereClauses.add(tcr.positionDateField + ' <= NEXT_N_MONTHS:' + latestRange);
+                        innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ') + '),';
                     }
+                    // **FIX END**
                 }
             }
             innerQuery = innerQuery.removeEnd(',');
@@ -251,10 +241,15 @@ public with sharing class TimelineService {
                     if (childRecordsAsMap.get(fieldName) instanceof List<sObject>) {
                         List<sObject> childRecords = (List<sObject>) childRecordsAsMap.get(fieldName);
                         for (Sobject eachCh : childRecords) {
+                            String sObjTypeName = String.valueOf(eachCh.getSObjectType());
+                            TimelineRecord tr = mapOfTimelineConfigurationRecords.get(sObjTypeName + fieldName);
+                            
+                            // **FIX**: Skip records from unconfigured object types (e.g., EmailMessageEvent)
+                            if (tr == null) {
+                                continue;
+                            }
+
                             Map<String, String> mapData = new Map<String, String>();
-                            TimelineRecord tr = mapOfTimelineConfigurationRecords.get(
-                                eachCh.getSObjectType() + fieldName
-                            );
                             String myId = eachCh.Id;
                             if (tr.objectName == 'ContentDocumentLink') {
                                 //NOPMD
