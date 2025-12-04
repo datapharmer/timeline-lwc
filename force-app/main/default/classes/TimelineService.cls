@@ -673,6 +673,22 @@ public with sharing class TimelineService {
         parentDetails.put('ConfigObjectType', parentConfigType);
         return parentDetails;
     }
+
+    /**
+     * @description Converts an UpperCamelCase string to a user-friendly format with spaces.
+     * @param input The UpperCamelCase string (e.g., 'TrackedChange').
+     * @return The formatted string (e.g., 'Tracked Change').
+     */
+    private static String formatCamelCase(String input) {
+        if (String.isBlank(input)) {
+            return input;
+        }
+        // Use a regular expression to find all capital letters and prepend a space,
+        // then trim the leading space from the result.
+        // 'TrackedChange' -> ' Tracked Change' -> 'Tracked Change'
+        return input.replaceAll('([A-Z])', ' $1').trim();
+    }
+
     private class TimelineRecord { //NOPMD
         private String relationshipName;
         private String parentObject;
