@@ -490,13 +490,7 @@ export default class timeline extends NavigationMixin(LightningElement) {
             recordCopy.detailField = record.detailField;
             recordCopy.detailFieldLabel = record.detailFieldLabel;
             recordCopy.fallbackTooltipField = record.fallbackTooltipField;
-            // Check if the record is a CaseFeed item and clean up the tooltip value
-            if (record.objectName === 'CaseFeed' && record.fallbackTooltipValue) {
-                // This regex finds and removes the pattern " (005...)" from the string
-                recordCopy.fallbackTooltipValue = record.fallbackTooltipValue.replace(/\s\([0-9a-zA-Z]{15,18}\)/g, '');
-            } else {
-                recordCopy.fallbackTooltipValue = record.fallbackTooltipValue;
-            }
+            recordCopy.fallbackTooltipValue = record.fallbackTooltipValue;
             recordCopy.tooltipId = record.tooltipId;
             recordCopy.tooltipObject = record.tooltipObject;
             recordCopy.drilldownId = record.drilldownId;
