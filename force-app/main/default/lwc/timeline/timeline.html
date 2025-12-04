@@ -52,12 +52,7 @@
         <template if:true={showFallbackTooltip}>
             <div>
                 <p>{mouseOverPositionValue}</p>
-                <template if:false={mouseOverFallbackIsHtml}>
-                    <p class="slds-text-body_regular slds-m-bottom_small">{mouseOverFallbackValue}</p>
-                </template>
-                <template if:true={mouseOverFallbackIsHtml}>
-                    <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
-                </template>
+                <lightning-formatted-rich-text value={mouseOverFallbackValue}></lightning-formatted-rich-text>
             </div>
         </template>
         
