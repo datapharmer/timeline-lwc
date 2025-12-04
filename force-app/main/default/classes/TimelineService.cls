@@ -223,9 +223,18 @@ public with sharing class TimelineService {
                             optionalFilter = inclusion + ' = true AND ';
                         }
                     }
-                    // Exclude specific feed types to prevent duplicates on the timeline.
                     if (objName == 'CaseFeed') {
+                        // Exclude specific feed types to prevent duplicates on the timeline.
                         optionalFilter += 'Type NOT IN (\'CaseCommentPost\', \'EmailMessageEvent\') AND ';
+                    
+                        // We need the Body field for ChangeStatusPost and TextPost.
+                        // To prevent a "duplicate field" error, add it only if it's not already in the query.
+                        // A regex with word boundaries (\b) is the safest way to check for the whole word 'Body'
+                        // and avoid partial matches on fields like 'CommentBody'.
+                        Pattern bodyPattern = Pattern.compile('\\bBody\\b', Pattern.CASE_INSENSITIVE);
+                        if (!bodyPattern.matcher(selectStatement).find()) {
+                            selectStatement += ', Body';
+                        }
                     }
                     innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
                     if (objName == 'OpenActivity') {
