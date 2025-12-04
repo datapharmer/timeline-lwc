@@ -128,19 +128,17 @@
                 <lightning-record-edit-form
                     record-id={caseCommentIdToEdit}
                     object-api-name="CaseComment"
+                    onsubmit={handleCommentSubmit}
                     onsuccess={handleCommentSaved}
                     onerror={handleCommentError}>
                     
                     <lightning-messages></lightning-messages>
                     
-                    <!-- The IsPublished field is required to save a comment -->
-                    <lightning-input-field field-name="IsPublished" class="slds-hidden"></lightning-input-field>
-                    
-                    <lightning-input-field field-name="CommentBody"></lightning-input-field>
-
-                    <!-- Modal Footer with Buttons -->
+                    <!-- The body is now empty, so the default layout will be rendered automatically -->
+                
+                    <!-- The footer must be inside the form for the submit button to work -->
                     <footer class="slds-modal__footer">
-                        <button class="slds-button slds-button_neutral" onclick={handleCloseCommentModal}>Cancel</button>
+                        <button class="slds-button slds-button_neutral" onclick={handleCloseCommentModal} type="button">Cancel</button>
                         <button class="slds-button slds-button_brand" type="submit">Save</button>
                     </footer>
                 </lightning-record-edit-form>
