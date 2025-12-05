@@ -379,17 +379,16 @@ public with sharing class TimelineService {
                                         if (trackedChanges != null && !trackedChanges.isEmpty()) {
                                             String fallbackValue = '';
                                             for (SObject tc : trackedChanges) {
-                                                // Get the value as a generic Object to check its type.
                                                 Object oldValueObject = tc.get('OldValue');
-                                            
-                                                // For lookups, Salesforce creates a record with names (String) and a record with Ids (Id).
-                                                // This check safely identifies and skips the record containing only Ids.
+                                                // Handle Lookup duplication in FeedTrackedChange
                                                 if (oldValueObject instanceof Id) {
-                                                    continue; // Skip to the next tracked change.
+                                                    continue; 
                                                 }
                                             
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
                                                 String fieldLabel = fieldNameApi; // Default to API name
+                                                
+                                                // Retrieve Field Label using Schema Describe
                                                 Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameApi);
                                                 if (fieldMetadata != null) {
                                                     fieldLabel = fieldMetadata.getLabel();
