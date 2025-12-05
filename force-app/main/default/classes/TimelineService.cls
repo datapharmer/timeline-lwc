@@ -390,6 +390,7 @@ public with sharing class TimelineService {
                                             
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
                                                 String fieldLabel = fieldNameApi; // Default to API name
+                                                String fieldNameForDescribe = fieldNameApi;
                                                 if (fieldNameApi != null && fieldNameApi.contains('.')) {
                                                     fieldNameForDescribe = fieldNameApi.substringAfterLast('.');
                                                 }
