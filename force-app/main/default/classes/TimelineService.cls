@@ -373,51 +373,86 @@ public with sharing class TimelineService {
 
                                 mapData.put('alternateDetailId', alternateDetailId);
 
-                                if ('CaseFeed'.equals(tr.objectName)) {
-                                    if ('TrackedChange'.equals(String.valueOf(eachCh.get('Type')))) {
-                                        List<SObject> trackedChanges = eachCh.getSObjects('FeedTrackedChanges');
-                                        if (trackedChanges != null && !trackedChanges.isEmpty()) {
-                                            String fallbackValue = '';
-                                            for (SObject tc : trackedChanges) {
-                                                // Get the value as a generic Object to check its type.
-                                                Object oldValueObject = tc.get('OldValue');
-                                            
-                                                // For lookups, Salesforce creates a record with names (String) and a record with Ids (Id).
-                                                // This check safely identifies and skips the record containing only Ids.
-                                                if (oldValueObject instanceof Id) {
-                                                    continue; // Skip to the next tracked change.
-                                                }
-                                            
-                                                String fieldNameApi = String.valueOf(tc.get('FieldName'));
-                                                String fieldLabel = fieldNameApi; // Default to API name
-                                                String fieldNameForDescribe = fieldNameApi;
-                                                if (fieldNameApi != null && fieldNameApi.contains('.')) {
-                                                    fieldNameForDescribe = fieldNameApi.substringAfterLast('.');
-                                                }
-                                                
-                                                Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameForDescribe);
-                                                
-                                                String oldValue = String.valueOf(oldValueObject);
-                                                if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
-                                            
-                                                String newValue = String.valueOf(tc.get('NewValue'));
-                                                if (newValue == null || 'null'.equalsIgnoreCase(newValue)) newValue = '<i>empty</i>';
-                                                
-                                                fallbackValue += '<b>' + fieldLabel + '</b>: ' + oldValue + ' &rarr; ' + newValue + '<br/>';
+                                if ('CaseFeed'.equals(tr.objectName)) {if ('CaseFeed'.equals(tr.objectName)) {
+                                if ('TrackedChange'.equals(String.valueOf(eachCh.get('Type')))) {
+                                    List<SObject> trackedChanges = eachCh.getSObjects('FeedTrackedChanges');
+                                    if (trackedChanges != null && !trackedChanges.isEmpty()) {
+                                        String fallbackValue = '';
+                                        for (SObject tc : trackedChanges) {
+                                            // Get the value as a generic Object to check its type.
+                                            Object oldValueObject = tc.get('OldValue');
+                                        
+                                            // For lookups, Salesforce creates a record with names (String) and a record with Ids (Id).
+                                            // This check safely identifies and skips the record containing only Ids.
+                                            if (oldValueObject instanceof Id) {
+                                                continue; // Skip to the next tracked change.
                                             }
-                                            mapData.put('fallbackTooltipValue', fallbackValue);
-                                            mapData.put('fallbackIsHtml', 'true');
-                                        } else {
-                                            mapData.put('fallbackTooltipValue', 'Field change details not available.');
-                                            mapData.put('fallbackIsHtml', 'false');
+                                        
+                                            String fieldNameRaw = String.valueOf(tc.get('FieldName'));
+                                            String fieldLabel = fieldNameRaw; // Default to raw value as fallback
+                                            
+                                            // FeedTrackedChange.FieldName is in format 'ObjectName.FieldApiName' 
+                                            // (e.g., 'Case.IsEscalated', 'Case.Priority')
+                                            // We need to parse this to get the actual field label
+                                            if (String.isNotBlank(fieldNameRaw)) {
+                                                String objectNameForDescribe = parentObjectType;
+                                                String fieldApiNameForDescribe = fieldNameRaw;
+                                                
+                                                if (fieldNameRaw.contains('.')) {
+                                                    Integer dotIndex = fieldNameRaw.lastIndexOf('.');
+                                                    objectNameForDescribe = fieldNameRaw.substring(0, dotIndex);
+                                                    fieldApiNameForDescribe = fieldNameRaw.substring(dotIndex + 1);
+                                                }
+                                                
+                                                // Get the field describe to retrieve the label
+                                                try {
+                                                    Schema.SObjectType sObjectType = Schema.getGlobalDescribe().get(objectNameForDescribe);
+                                                    if (sObjectType != null) {
+                                                        Schema.DescribeSObjectResult describeResult = sObjectType.getDescribe();
+                                                        Map<String, Schema.SObjectField> fieldMap = describeResult.fields.getMap();
+                                                        
+                                                        // Field map keys are lowercase
+                                                        Schema.SObjectField fieldToken = fieldMap.get(fieldApiNameForDescribe.toLowerCase());
+                                                        if (fieldToken != null) {
+                                                            fieldLabel = fieldToken.getDescribe().getLabel();
+                                                        } else {
+                                                            // Fallback: use the API name without the object prefix, formatted nicely
+                                                            fieldLabel = fieldApiNameForDescribe;
+                                                        }
+                                                    }
+                                                } catch (Exception e) {
+                                                    // If describe fails, use the API name without the object prefix
+                                                    if (fieldNameRaw.contains('.')) {
+                                                        fieldLabel = fieldNameRaw.substringAfterLast('.');
+                                                    }
+                                                }
+                                            }
+                                            
+                                            String oldValue = String.valueOf(oldValueObject);
+                                            if (String.isBlank(oldValue) || 'null'.equalsIgnoreCase(oldValue)) {
+                                                oldValue = '<i>empty</i>';
+                                            }
+                                        
+                                            String newValue = String.valueOf(tc.get('NewValue'));
+                                            if (String.isBlank(newValue) || 'null'.equalsIgnoreCase(newValue)) {
+                                                newValue = '<i>empty</i>';
+                                            }
+                                            
+                                            fallbackValue += '<b>' + fieldLabel + '</b>: ' + oldValue + ' &rarr; ' + newValue + '<br/>';
                                         }
-                                    } else {
-                                        // For other CaseFeed types (e.g., TextPost), the Body is HTML.
+                                        mapData.put('fallbackTooltipValue', fallbackValue);
                                         mapData.put('fallbackIsHtml', 'true');
+                                    } else {
+                                        mapData.put('fallbackTooltipValue', 'Field change details not available.');
+                                        mapData.put('fallbackIsHtml', 'false');
                                     }
                                 } else {
-                                    mapData.put('fallbackIsHtml', 'false');
+                                    // For other CaseFeed types (e.g., TextPost), the Body is HTML.
+                                    mapData.put('fallbackIsHtml', 'true');
                                 }
+                            } else {
+                                mapData.put('fallbackIsHtml', 'false');
+                            }
 
                                 if (iconValues.get('value') != null && iconValues.get('value') != '') {
                                     mapData.put('icon', iconValues.get('value'));
