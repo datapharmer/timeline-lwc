@@ -242,11 +242,9 @@ public with sharing class TimelineService {
                                 continue;
                             }
                             
-                            // **FIX START**: Exclude 'ChangeStatusPost' feed items
-                            if ('CaseFeed'.equals(tr.objectName) && 'ChangeStatusPost'.equals(String.valueOf(eachCh.get('Type')))) {
-                                continue;
+                            if (objName == 'CaseFeed') {
+                                optionalFilter += 'Type NOT IN (\'CaseCommentPost\', \'EmailMessageEvent\', \'ChangeStatusPost\') AND ';
                             }
-                            // **FIX END**
 
                             Map<String, String> mapData = new Map<String, String>();
                             String myId = eachCh.Id;
