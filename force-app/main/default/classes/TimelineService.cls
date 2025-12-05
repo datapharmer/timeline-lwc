@@ -390,10 +390,11 @@ public with sharing class TimelineService {
                                             
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
                                                 String fieldLabel = fieldNameApi; // Default to API name
-                                                Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameApi);
-                                                if (fieldMetadata != null) {
-                                                    fieldLabel = fieldMetadata.getLabel();
+                                                if (fieldNameApi != null && fieldNameApi.contains('.')) {
+                                                    fieldNameForDescribe = fieldNameApi.substringAfterLast('.');
                                                 }
+                                                
+                                                Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameForDescribe);
                                                 
                                                 String oldValue = String.valueOf(oldValueObject);
                                                 if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
