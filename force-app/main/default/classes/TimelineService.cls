@@ -372,36 +372,32 @@ public with sharing class TimelineService {
                                 }
 
                                 mapData.put('alternateDetailId', alternateDetailId);
-
                                 if ('CaseFeed'.equals(tr.objectName)) {
                                     if ('TrackedChange'.equals(String.valueOf(eachCh.get('Type')))) {
                                         List<SObject> trackedChanges = eachCh.getSObjects('FeedTrackedChanges');
                                         if (trackedChanges != null && !trackedChanges.isEmpty()) {
                                             String fallbackValue = '';
                                             for (SObject tc : trackedChanges) {
-                                                // Get the value as a generic Object to check its type.
                                                 Object oldValueObject = tc.get('OldValue');
                                             
                                                 // For lookups, Salesforce creates a record with names (String) and a record with Ids (Id).
                                                 // This check safely identifies and skips the record containing only Ids.
                                                 if (oldValueObject instanceof Id) {
-                                                    continue; // Skip to the next tracked change.
+                                                    continue;
                                                 }
                                             
-                                                String fieldNameApi = String.valueOf(tc.get('FieldName'));
-                                                String fieldLabel = fieldNameApi; // Default to API name
-                                                String fieldNameForDescribe = fieldNameApi;
-                                                if (fieldNameApi != null && fieldNameApi.contains('.')) {
-                                                    fieldNameForDescribe = fieldNameApi.substringAfterLast('.');
-                                                }
-                                                
-                                                Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameForDescribe);
+                                                String fieldNameRaw = String.valueOf(tc.get('FieldName'));
+                                                String fieldLabel = getFieldLabelFromTrackedChange(fieldNameRaw);
                                                 
                                                 String oldValue = String.valueOf(oldValueObject);
-                                                if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
+                                                if (String.isBlank(oldValue) || 'null'.equalsIgnoreCase(oldValue)) {
+                                                    oldValue = '<i>empty</i>';
+                                                }
                                             
                                                 String newValue = String.valueOf(tc.get('NewValue'));
-                                                if (newValue == null || 'null'.equalsIgnoreCase(newValue)) newValue = '<i>empty</i>';
+                                                if (String.isBlank(newValue) || 'null'.equalsIgnoreCase(newValue)) {
+                                                    newValue = '<i>empty</i>';
+                                                }
                                                 
                                                 fallbackValue += '<b>' + fieldLabel + '</b>: ' + oldValue + ' &rarr; ' + newValue + '<br/>';
                                             }
@@ -411,6 +407,13 @@ public with sharing class TimelineService {
                                             mapData.put('fallbackTooltipValue', 'Field change details not available.');
                                             mapData.put('fallbackIsHtml', 'false');
                                         }
+                                    } else {
+                                        // For other CaseFeed types (e.g., TextPost), the Body is HTML.
+                                        mapData.put('fallbackIsHtml', 'true');
+                                    }
+                                } else {
+                                    mapData.put('fallbackIsHtml', 'false');
+                                }
                                     } else {
                                         // For other CaseFeed types (e.g., TextPost), the Body is HTML.
                                         mapData.put('fallbackIsHtml', 'true');
@@ -736,4 +739,46 @@ public with sharing class TimelineService {
     }
     private class TimelineSetupException extends Exception {
     }
+
+/**
+ * @description Extracts the field label from a FeedTrackedChange FieldName.
+ *              The FieldName format is 'ObjectName.FieldApiName' (e.g., 'Case.IsEscalated').
+ * @param fieldNameRaw The raw field name from FeedTrackedChange (e.g., 'Case.IsEscalated')
+ * @return The field label (e.g., 'Escalated') or the API name as fallback
+ */
+private static String getFieldLabelFromTrackedChange(String fieldNameRaw) {
+    if (String.isBlank(fieldNameRaw)) {
+        return fieldNameRaw;
+    }
+    
+    String objectName;
+    String fieldApiName;
+    
+    // Split on first dot to separate object name from field API name
+    Integer dotIndex = fieldNameRaw.indexOf('.');
+    if (dotIndex > 0) {
+        objectName = fieldNameRaw.substring(0, dotIndex);
+        fieldApiName = fieldNameRaw.substring(dotIndex + 1);
+    } else {
+        // No dot found, return as-is
+        return fieldNameRaw;
+    }
+    
+    try {
+        Schema.SObjectType sObjectType = Schema.getGlobalDescribe().get(objectName);
+        if (sObjectType != null) {
+            Map<String, Schema.SObjectField> fieldMap = sObjectType.getDescribe().fields.getMap();
+            Schema.SObjectField fieldToken = fieldMap.get(fieldApiName.toLowerCase());
+            if (fieldToken != null) {
+                return fieldToken.getDescribe().getLabel();
+            }
+        }
+    } catch (Exception e) {
+        // Silently fail and return fallback
+    }
+    
+    // Fallback: return the field API name without the object prefix
+    return fieldApiName;
+}
+
 }
