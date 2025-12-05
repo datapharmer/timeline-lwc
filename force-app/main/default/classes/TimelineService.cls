@@ -390,10 +390,7 @@ public with sharing class TimelineService {
                                             
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
                                                 String fieldLabel = fieldNameApi; // Default to API name
-                                                
-                                                // FIX: CaseFeed always tracks changes on the Case object,
-                                                // so explicitly use 'Case' for field metadata lookup
-                                                Schema.DescribeFieldResult fieldMetadata = getDescribeInfo('Case', fieldNameApi);
+                                                Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameApi);
                                                 if (fieldMetadata != null) {
                                                     fieldLabel = fieldMetadata.getLabel();
                                                 }
