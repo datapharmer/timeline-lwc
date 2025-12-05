@@ -372,6 +372,7 @@ public with sharing class TimelineService {
                                 }
 
                                 mapData.put('alternateDetailId', alternateDetailId);
+
                                 if ('CaseFeed'.equals(tr.objectName)) {
                                     if ('TrackedChange'.equals(String.valueOf(eachCh.get('Type')))) {
                                         List<SObject> trackedChanges = eachCh.getSObjects('FeedTrackedChanges');
@@ -407,13 +408,6 @@ public with sharing class TimelineService {
                                             mapData.put('fallbackTooltipValue', 'Field change details not available.');
                                             mapData.put('fallbackIsHtml', 'false');
                                         }
-                                    } else {
-                                        // For other CaseFeed types (e.g., TextPost), the Body is HTML.
-                                        mapData.put('fallbackIsHtml', 'true');
-                                    }
-                                } else {
-                                    mapData.put('fallbackIsHtml', 'false');
-                                }
                                     } else {
                                         // For other CaseFeed types (e.g., TextPost), the Body is HTML.
                                         mapData.put('fallbackIsHtml', 'true');
