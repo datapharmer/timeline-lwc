@@ -1,6 +1,6 @@
 /**
-* @description Apex supporting methods for the timeline lightning web component
-*/
+ * @description Apex supporting methods for the timeline lightning web component
+ */
 public with sharing class TimelineService {
     /**
      * @description Return all child record types for the parent record in context
@@ -16,7 +16,9 @@ public with sharing class TimelineService {
             String parentObjectType = parentDetails.get('QueryObjectType');
             String parentConfigType = parentDetails.get('ConfigObjectType'); //NOPMD
             parentObjectId = parentDetails.get('Id');
+
             Map<String, String> childObjects = getChildObjects(parentObjectType);
+
             String queryTimelineConfiguration =
                 'SELECT Active__c, ' +
                 'Relationship_Name__c, ' +
@@ -30,6 +32,7 @@ public with sharing class TimelineService {
                 ' AND ' +
                 'Parent_Object__c =:parentConfigType ' +
                 'ORDER BY Sequence__c ASC '; //NOPMD
+
             List<Timeline_Configuration__mdt> listOfTimelineConfigurations = Database.query(queryTimelineConfiguration); //NOPMD
             Map<String, String> mapOfTimelineTypes = new Map<String, String>();
             for (Timeline_Configuration__mdt timelineType : listOfTimelineConfigurations) {
@@ -149,73 +152,114 @@ public with sharing class TimelineService {
                 );
             }
             Map<String, String> childObjects = getChildObjects(parentObjectType);
+
             String innerQuery = '';
+
             for (String eachObject : mapOfTimelineConfigurationRecords.keyset()) {
                 TimelineRecord tcr = mapOfTimelineConfigurationRecords.get(eachObject);
                 if (childObjects.containsKey(eachObject)) {
-                    String objName = tcr.objectName;
-                    
-                    Set<String> fieldsToQuery = new Set<String>{'Id'};
-                    if(String.isNotBlank(tcr.detailField)) fieldsToQuery.add(tcr.detailField);
-                    if(String.isNotBlank(tcr.positionDateField)) fieldsToQuery.add(tcr.positionDateField);
-                    
-                    if (String.isNotBlank(tcr.type) && 
-                        (objName == 'Task' || objName == 'OpenActivity' || objName == 'ActivityHistory' || objName == 'TaskRelation' ||
-                         objName == 'ContentDocumentLink' || objName == 'TaskWhoRelation' || objName == 'LookedUpFromActivity' || objName == 'CaseFeed')) {
-                        fieldsToQuery.add(tcr.type);
+                    String objName = String.valueOf(tcr.objectName);
+                    String tooltipField = String.valueOf(tcr.fallbackTooltipField);
+                    String tooltipIdField = String.valueOf(tcr.tooltipIdField);
+                    String drilldownIdField = String.valueOf(tcr.drilldownIdField);
+                    String typeField = String.valueOf(tcr.type);
+                    String iconField = String.valueOf(tcr.iconField);
+                    String iconColourField = String.valueOf(tcr.iconBackgroundField);
+                    String selectStatement = '(SELECT Id, ' + tcr.detailField + ', ' + tcr.positionDateField + '';
+                    if (
+                        (typeField != null && typeField != '') &&
+                        (objName == 'Task' ||
+                        objName == 'OpenActivity' ||
+                        objName == 'ActivityHistory' ||
+                        objName == 'TaskRelation' ||
+                        objName == 'ContentDocumentLink' ||
+                        objName == 'TaskWhoRelation' ||
+                        objName == 'LookedUpFromActivity' ||
+                        objName == 'CaseFeed')
+                    ) {
+                        selectStatement = selectStatement + ', ' + tcr.type + '';
                     }
-                    
-                    if (objName == 'OpenActivity' || objName == 'ActivityHistory') {
-                        fieldsToQuery.add('ActivityDate');
-                        fieldsToQuery.add('AlternateDetailId');
+                    if (
+                        (objName == 'OpenActivity' || objName == 'ActivityHistory') &&
+                        !selectStatement.contains('ActivityDate')
+                    ) {
+                        selectStatement = selectStatement + ', ActivityDate' + '';
                     }
-                    
+                    if (
+                        (objName == 'OpenActivity' || objName == 'ActivityHistory') &&
+                        !selectStatement.contains('AlternateDetailId')
+                    ) {
+                        selectStatement = selectStatement + ', AlternateDetailId' + '';
+                    }
+
                     if (objName == 'ContentDocumentLink') {
-                        fieldsToQuery.add('ContentDocumentId');
+                        selectStatement = selectStatement + ', ' + 'ContentDocumentId' + '';
                     }
 
                     if (objName == 'CaseFeed') {
-                        fieldsToQuery.add('Body');
+                        selectStatement = selectStatement + ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
                     }
 
-                    if (String.isNotBlank(tcr.fallbackTooltipField)) fieldsToQuery.add(tcr.fallbackTooltipField);
-                    if (String.isNotBlank(tcr.drilldownIdField)) fieldsToQuery.add(tcr.drilldownIdField);
-                    if (String.isNotBlank(tcr.tooltipIdField)) fieldsToQuery.add(tcr.tooltipIdField);
-                    if (String.isNotBlank(tcr.iconField)) fieldsToQuery.add(tcr.iconField);
-                    if (String.isNotBlank(tcr.iconBackgroundField)) fieldsToQuery.add(tcr.iconBackgroundField);
-
-                    String selectStatement = '(SELECT ' + String.join(new List<String>(fieldsToQuery), ', ');
-
-                    if (objName == 'CaseFeed') {
-                        selectStatement += ', (SELECT FieldName, OldValue, NewValue FROM FeedTrackedChanges)';
+                    if (tooltipField != null && tooltipField != '' && tcr.detailField <> tcr.fallbackTooltipField) {
+                        selectStatement = selectStatement + ', ' + tcr.fallbackTooltipField + '';
                     }
-                    
-                    innerQuery += selectStatement + ' FROM ' + tcr.relationshipName;
 
-                    List<String> whereClauses = new List<String>();
-                    if (String.isNotBlank(tcr.inclusionField)) {
+                    if (drilldownIdField != null && drilldownIdField != '') {
+                        selectStatement = selectStatement + ', ' + tcr.drilldownIdField + '';
+                    }
+                    if (tooltipIdField != null && tooltipIdField != '' && tcr.drilldownIdField <> tcr.tooltipIdField) {
+                        selectStatement = selectStatement + ', ' + tcr.tooltipIdField + '';
+                    }
+
+                    if (iconField != null && iconField != '') {
+                        selectStatement = selectStatement + ', ' + tcr.iconField + '';
+                    }
+                    if (iconColourField != null && iconColourField != '') {
+                        selectStatement = selectStatement + ', ' + tcr.iconBackgroundField + '';
+                    }
+
+                    String relationship = tcr.relationshipName;
+
+                    String optionalFilter = '';
+                    if (tcr.inclusionField != null && tcr.inclusionField != '') {
                         String inclusion = tcr.inclusionField.trim();
                         if (inclusion.contains(' ') || inclusion.contains('=') || inclusion.contains('<') || inclusion.contains('>') || inclusion.toUpperCase().contains(' IN ')) {
-                            whereClauses.add(inclusion);
+                            optionalFilter = inclusion + ' AND ';
                         } else {
-                            whereClauses.add(inclusion + ' = true');
+                            optionalFilter = inclusion + ' = true AND ';
                         }
                     }
 
+                    // Exclude CaseCommentPost records from the CaseFeed query to prevent duplicates,
+                    // as CaseComment records are handled separately.
+                    if (objName == 'CaseFeed') {
+                        optionalFilter += 'Type NOT IN (\'CaseCommentPost\', \'EmailMessageEvent\', \'ChangeStatusPost\') AND ';
+                    }
+
+                    innerQuery = innerQuery + selectStatement + ' FROM ' + relationship;
                     if (objName == 'OpenActivity') {
-                        if (!whereClauses.isEmpty()) {
-                            innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ');
-                        }
-                        innerQuery += ' ORDER BY ActivityDate ASC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
-                    } else if (objName == 'ActivityHistory' || objName == 'CaseFeed') {
-                        if (!whereClauses.isEmpty()) {
-                            innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ');
-                        }
-                        innerQuery += ' ORDER BY ' + tcr.positionDateField + ' DESC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
+                        innerQuery =
+                            innerQuery +
+                            ' ORDER BY ' +
+                            'ActivityDate ASC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
+                    } else if (objName == 'ActivityHistory') {
+                        innerQuery =
+                            innerQuery +
+                            ' ORDER BY ' +
+                            'ActivityDate DESC NULLS LAST, LastModifiedDate DESC LIMIT 500),';
                     } else {
-                        whereClauses.add(tcr.positionDateField + ' >= LAST_N_MONTHS:' + earliestRange);
-                        whereClauses.add(tcr.positionDateField + ' <= NEXT_N_MONTHS:' + latestRange);
-                        innerQuery += ' WHERE ' + String.join(whereClauses, ' AND ') + '),';
+                        innerQuery =
+                            innerQuery +
+                            ' WHERE ' +
+                            optionalFilter +
+                            tcr.positionDateField +
+                            '>= LAST_N_MONTHS:' +
+                            earliestRange +
+                            ' AND ' +
+                            tcr.positionDateField +
+                            ' <= NEXT_N_MONTHS:' +
+                            latestRange +
+                            '),';
                     }
                 }
             }
@@ -226,27 +270,24 @@ public with sharing class TimelineService {
                 ' FROM ' +
                 parentObjectType +
                 ' WHERE Id =:parentObjectId'; //NOPMD
+
             List<SObject> listOfTimelineRecords = Database.query(queryRecords); //NOPMD
+
             List<Map<String, String>> listOfTimelineData = new List<Map<String, String>>();
             Map<String, String> dupeDataCheck = new Map<String, String>();
+
             for (SObject each : listOfTimelineRecords) {
                 Map<String, Object> childRecordsAsMap = each.getPopulatedFieldsAsMap();
                 for (String fieldName : childRecordsAsMap.keySet()) {
                     if (childRecordsAsMap.get(fieldName) instanceof List<sObject>) {
                         List<sObject> childRecords = (List<sObject>) childRecordsAsMap.get(fieldName);
                         for (Sobject eachCh : childRecords) {
-                            String sObjTypeName = String.valueOf(eachCh.getSObjectType());
-                            TimelineRecord tr = mapOfTimelineConfigurationRecords.get(sObjTypeName + fieldName);
-                            
-                            if (tr == null) {
-                                continue;
-                            }
-                            
-                            if (objName == 'CaseFeed') {
-                                optionalFilter += 'Type NOT IN (\'CaseCommentPost\', \'EmailMessageEvent\', \'ChangeStatusPost\') AND ';
-                            }
-
                             Map<String, String> mapData = new Map<String, String>();
+
+                            TimelineRecord tr = mapOfTimelineConfigurationRecords.get(
+                                eachCh.getSObjectType() + fieldName
+                            );
+
                             String myId = eachCh.Id;
                             if (tr.objectName == 'ContentDocumentLink') {
                                 //NOPMD
@@ -259,15 +300,6 @@ public with sharing class TimelineService {
                                     eachCh,
                                     tr.objectName
                                 );
-                                String detailValue = detailValues.get('value');
-                                if ('CaseFeed'.equals(tr.objectName) && 'Type'.equalsIgnoreCase(tr.detailField) && detailValue != null) {
-                                    detailValue = formatCamelCase(detailValue);
-                                }
-                                if (String.isBlank(detailValue)) {
-                                    mapData.put('detailField', '[' + detailValues.get('label') + ']');
-                                } else {
-                                    mapData.put('detailField', detailValue);
-                                }
                                 Map<String, String> positionValues = getFieldValues(
                                     tr.positionDateField,
                                     eachCh,
@@ -297,6 +329,19 @@ public with sharing class TimelineService {
                                 Map<String, String> typeValues = getFieldValues(tr.type, eachCh, tr.objectName);
                                 mapData.put('objectId', myId);
                                 mapData.put('parentObject', parentObjectType);
+                                String detailValue = detailValues.get('value');
+
+                                // For CaseFeed items, if the detail field is configured to be 'Type', format it for better display.
+                                if ('CaseFeed'.equals(tr.objectName) && 'Type'.equalsIgnoreCase(tr.detailField) && detailValue != null) {
+                                    detailValue = formatCamelCase(detailValue);
+                                }
+                                
+                                if (String.isBlank(detailValue)) {
+                                    mapData.put('detailField', '[' + detailValues.get('label') + ']');
+                                } else {
+                                    mapData.put('detailField', detailValue);
+                                }
+
                                 mapData.put('detailFieldLabel', detailValues.get('label'));
                                 mapData.put('positionDateField', positionValues.get('label'));
                                 mapData.put('positionDateValue', positionValues.get('value'));
@@ -308,8 +353,16 @@ public with sharing class TimelineService {
                                 mapData.put('drilldownId', drilldownIdValues.get('value'));
                                 mapData.put('tooltipId', tooltipIdValues.get('value'));
                                 mapData.put('tooltipObject', tr.tooltipObject);
-                                mapData.put('type', typeValues.get('value'));
+                                mapData.put('fallbackTooltipValue', fallbackValues.get('value'));
+                                String typeValue = typeValues.get('value');
+                                // For CaseFeed records, format the 'Type' field (e.g., 'TrackedChange') for better display.
+                                if ('CaseFeed'.equals(tr.objectName) && typeValue != null) {
+                                    typeValue = formatCamelCase(typeValue);
+                                }
+                                
+                                mapData.put('type', typeValue);
                                 String alternateDetailId = '';
+
                                 if (
                                     (tr.objectName == 'OpenActivity' || tr.objectName == 'ActivityHistory') &&
                                     (String.valueOf(eachCh.get('AlternateDetailId')) != '' &&
@@ -317,37 +370,53 @@ public with sharing class TimelineService {
                                 ) {
                                     alternateDetailId = String.valueOf(eachCh.get('AlternateDetailId'));
                                 }
+
                                 mapData.put('alternateDetailId', alternateDetailId);
+
                                 if ('CaseFeed'.equals(tr.objectName)) {
-                                    String feedType = String.valueOf(eachCh.get('Type'));
-                                    if ('TrackedChange'.equals(feedType)) {
+                                    if ('TrackedChange'.equals(String.valueOf(eachCh.get('Type')))) {
                                         List<SObject> trackedChanges = eachCh.getSObjects('FeedTrackedChanges');
                                         if (trackedChanges != null && !trackedChanges.isEmpty()) {
                                             String fallbackValue = '';
                                             for (SObject tc : trackedChanges) {
+                                                // Get the value as a generic Object to check its type.
                                                 Object oldValueObject = tc.get('OldValue');
+                                            
+                                                // For lookups, Salesforce creates a record with names (String) and a record with Ids (Id).
+                                                // This check safely identifies and skips the record containing only Ids.
                                                 if (oldValueObject instanceof Id) {
-                                                    continue;
+                                                    continue; // Skip to the next tracked change.
                                                 }
+                                            
                                                 String fieldNameApi = String.valueOf(tc.get('FieldName'));
-                                                String fieldLabel = fieldNameApi;
+                                                String fieldLabel = fieldNameApi; // Default to API name
                                                 Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(parentObjectType, fieldNameApi);
                                                 if (fieldMetadata != null) {
                                                     fieldLabel = fieldMetadata.getLabel();
                                                 }
+                                                
                                                 String oldValue = String.valueOf(oldValueObject);
                                                 if (oldValue == null || 'null'.equalsIgnoreCase(oldValue)) oldValue = '<i>empty</i>';
+                                            
                                                 String newValue = String.valueOf(tc.get('NewValue'));
                                                 if (newValue == null || 'null'.equalsIgnoreCase(newValue)) newValue = '<i>empty</i>';
+                                                
                                                 fallbackValue += '<b>' + fieldLabel + '</b>: ' + oldValue + ' &rarr; ' + newValue + '<br/>';
                                             }
                                             mapData.put('fallbackTooltipValue', fallbackValue);
+                                            mapData.put('fallbackIsHtml', 'true');
                                         } else {
                                             mapData.put('fallbackTooltipValue', 'Field change details not available.');
+                                            mapData.put('fallbackIsHtml', 'false');
                                         }
+                                    } else {
+                                        // For other CaseFeed types (e.g., TextPost), the Body is HTML.
+                                        mapData.put('fallbackIsHtml', 'true');
                                     }
+                                } else {
+                                    mapData.put('fallbackIsHtml', 'false');
                                 }
-                                mapData.put('fallbackIsHtml', 'true');
+
                                 if (iconValues.get('value') != null && iconValues.get('value') != '') {
                                     mapData.put('icon', iconValues.get('value'));
                                 } else {
@@ -406,77 +475,80 @@ public with sharing class TimelineService {
         String fieldLabel = '';
         String fieldType = '';
         String objectCheck = '';
+        //String fieldCheck = '';
         String fieldStripped = '';
         Boolean fieldCanAccess = true;
+
         Id recordId;
+
         if (field == null || field == '') {
             fieldDetails.put('value', '');
             fieldDetails.put('label', '');
             return fieldDetails;
         }
+
         String[] objectFieldSplit = field.split('\\.');
         if (objectFieldSplit.size() > 1) {
             fieldStripped = objectFieldSplit[objectFieldSplit.size() - 1];
         } else {
             fieldStripped = field;
         }
-        try {
-            switch on objectFieldSplit.size() {
-                when 1 {
-                    fieldValue = String.valueOf(records.get(field));
-                    recordId = String.valueOf(records.get('Id'));
-                }
-                when 2 {
-                    fieldValue = String.valueOf(records.getSobject(objectFieldSplit[0]).get(objectFieldSplit[1]));
-                    recordId = String.valueOf(records.getSobject(objectFieldSplit[0]).get('Id'));
-                }
-                when 3 {
-                    fieldValue = String.valueOf(
-                        records.getSobject(objectFieldSplit[0]).getSobject(objectFieldSplit[1]).get(objectFieldSplit[2])
-                    );
-                    recordId = String.valueOf(
-                        records.getSobject(objectFieldSplit[0]).getSobject(objectFieldSplit[1]).get('Id')
-                    );
-                }
-                when 4 {
-                    fieldValue = String.valueOf(
-                        records.getSobject(objectFieldSplit[0])
-                            .getSobject(objectFieldSplit[1])
-                            .getSobject(objectFieldSplit[2])
-                            .get(objectFieldSplit[3])
-                    );
-                    recordId = String.valueOf(
-                        records.getSobject(objectFieldSplit[0])
-                            .getSobject(objectFieldSplit[1])
-                            .getSobject(objectFieldSplit[2])
-                            .get('Id')
-                    );
-                }
-                when 5 {
-                    fieldValue = String.valueOf(
-                        records.getSobject(objectFieldSplit[0])
-                            .getSobject(objectFieldSplit[1])
-                            .getSobject(objectFieldSplit[2])
-                            .getSobject(objectFieldSplit[3])
-                            .get(objectFieldSplit[4])
-                    );
-                    recordId = String.valueOf(
-                        records.getSobject(objectFieldSplit[0])
-                            .getSobject(objectFieldSplit[1])
-                            .getSobject(objectFieldSplit[2])
-                            .getSobject(objectFieldSplit[3])
-                            .get('Id')
-                    );
-                }
+        switch on objectFieldSplit.size() {
+            when 1 {
+                fieldValue = String.valueOf(records.get(field));
+                recordId = String.valueOf(records.get('Id'));
             }
-            if (String.valueOf(recordId).startsWith('00a')) {
-                objectCheck = 'CaseComment';
-            } else {
-                objectCheck = String.valueOf(recordId.getSobjectType());
+            when 2 {
+                fieldValue = String.valueOf(records.getSobject(objectFieldSplit[0]).get(objectFieldSplit[1]));
+                recordId = String.valueOf(records.getSobject(objectFieldSplit[0]).get('Id'));
             }
-        } catch (Exception e) {
-            fieldValue = '';
+            when 3 {
+                fieldValue = String.valueOf(
+                    records.getSobject(objectFieldSplit[0]).getSobject(objectFieldSplit[1]).get(objectFieldSplit[2])
+                );
+                recordId = String.valueOf(
+                    records.getSobject(objectFieldSplit[0]).getSobject(objectFieldSplit[1]).get('Id')
+                );
+            }
+            when 4 {
+                fieldValue = String.valueOf(
+                    records.getSobject(objectFieldSplit[0])
+                        .getSobject(objectFieldSplit[1])
+                        .getSobject(objectFieldSplit[2])
+                        .get(objectFieldSplit[3])
+                );
+                recordId = String.valueOf(
+                    records.getSobject(objectFieldSplit[0])
+                        .getSobject(objectFieldSplit[1])
+                        .getSobject(objectFieldSplit[2])
+                        .get('Id')
+                );
+            }
+            when 5 {
+                fieldValue = String.valueOf(
+                    records.getSobject(objectFieldSplit[0])
+                        .getSobject(objectFieldSplit[1])
+                        .getSobject(objectFieldSplit[2])
+                        .getSobject(objectFieldSplit[3])
+                        .get(objectFieldSplit[4])
+                );
+                recordId = String.valueOf(
+                    records.getSobject(objectFieldSplit[0])
+                        .getSobject(objectFieldSplit[1])
+                        .getSobject(objectFieldSplit[2])
+                        .getSobject(objectFieldSplit[3])
+                        .get('Id')
+                );
+            }
         }
+        //Case comments cannot be translated to an sobjectype from the ID
+        if (String.valueOf(recordId).startsWith('00a')) {
+            objectCheck = 'CaseComment';
+        } else {
+            objectCheck = String.valueOf(recordId.getSobjectType());
+        }
+        //If parent object aggregates activity lists then field names change
+        //For activities their sobjecttype is Task and Event
         switch on objectName {
             when 'ActivityHistory', 'OpenActivity', 'LookedUpFromActivity' {
                 if (objectCheck == 'Task' || objectCheck == 'Event') {
@@ -484,65 +556,76 @@ public with sharing class TimelineService {
                 }
             }
         }
+
         Schema.DescribeFieldResult fieldMetadata = getDescribeInfo(objectCheck, fieldStripped);
-        fieldCanAccess = true;
+        fieldCanAccess = true; // Assume access, then check
+        
         if (fieldMetadata != null) {
             fieldLabel = fieldMetadata.getLabel();
             fieldCanAccess = fieldMetadata.isAccessible();
             fieldType = String.valueOf(fieldMetadata.getType());
         } else {
-            fieldLabel = fieldStripped;
+            fieldLabel = fieldStripped; // Fallback to API name
         }
+
         if (fieldCanAccess == false) {
             fieldValue = '![' + fieldLabel + ']!';
         }
+
         if (fieldValue != null && fieldValue.length() > 255) {
             fieldValue = fieldValue.substring(0, 251) + '...';
         }
         fieldDetails.put('value', fieldValue);
         fieldDetails.put('label', fieldLabel);
         fieldDetails.put('type', fieldType);
+
         return fieldDetails;
     }
+
     private static Schema.DescribeFieldResult getDescribeInfo(String objectName, String fieldName) {
-        if (String.isBlank(objectName) || String.isBlank(fieldName)) {
+        if (String.isBlank(fieldName)) {
             return null;
         }
         String key = objectName + fieldName;
+
         if (!fieldDescribeCache.containsKey(key)) {
-            try {
-                Schema.DescribeSObjectResult describeSobjects = ((SObject) (Type.forName(
-                            'Schema.' + String.valueOf(objectName)
-                        )
-                        .newInstance()))
-                    .getSObjectType()
-                    .getDescribe(SObjectDescribeOptions.DEFERRED);
-                Map<String, Schema.SObjectField> fieldMap = describeSobjects.fields.getMap();
-                Schema.SObjectField fieldToken = fieldMap.get(fieldName);
-                if (fieldToken == null) {
-                    fieldToken = fieldMap.get(fieldName + 'Id');
-                }
-                if (fieldToken != null) {
-                    fieldDescribeCache.put(key, fieldToken.getDescribe());
-                } else {
-                    fieldDescribeCache.put(key, null);
-                }
-            } catch (Exception e) {
-                fieldDescribeCache.put(key, null);
+            Schema.DescribeSObjectResult describeSobjects = ((SObject) (Type.forName(
+                        'Schema.' + String.valueOf(objectName)
+                    )
+                    .newInstance()))
+                .getSObjectType()
+                .getDescribe(SObjectDescribeOptions.DEFERRED);
+            
+            Map<String, Schema.SObjectField> fieldMap = describeSobjects.fields.getMap();
+            Schema.SObjectField fieldToken = fieldMap.get(fieldName);
+
+            // If not found, it could be a relationship name like 'owner'. Try appending 'Id'.
+            if (fieldToken == null) {
+                fieldToken = fieldMap.get(fieldName + 'Id');
+            }
+            
+            if (fieldToken != null) {
+                fieldDescribeCache.put(key, fieldToken.getDescribe());
+            } else {
+                fieldDescribeCache.put(key, null); // Field not found, cache null to prevent crash
             }
         }
+
         return fieldDescribeCache.get(key);
     }
+
     private static Boolean isPersonAccount(String recordId) {
         if (Schema.sObjectType.Account.fields.getMap().containsKey('isPersonAccount')) {
             String queryPersonAccount = 'SELECT Id, IsPersonAccount FROM Account Where Id =:recordId';
             SObject acc = Database.query(queryPersonAccount);
+
             if (acc.get('IsPersonAccount') == true) {
                 return true;
             }
         }
         return false;
     }
+
     private static Map<String, String> getParentDetails(String recordId, String field) {
         Map<String, String> parentDetails = new Map<String, String>();
         String parentObjectType = String.valueOf(Id.valueOf(recordId).getSobjectType());
@@ -552,12 +635,16 @@ public with sharing class TimelineService {
             fieldValue = recordId;
         } else {
             String queryParentId = 'SELECT Id, ' + field + ' FROM ' + parentObjectType + ' Where Id =:recordId';
+
             List<SObject> newDefaultRecord = Database.query(queryParentId); //NOPMD
+
             Schema.DescribeSObjectResult describeSobjects = ((SObject) (Type.forName('Schema.' + parentObjectType)
                     .newInstance()))
                 .getSObjectType()
                 .getDescribe(SObjectDescribeOptions.DEFERRED);
+
             String fieldLabel = String.valueOf(describeSobjects.fields.getMap().get(field).getDescribe().getLabel());
+
             SObjectAccessDecision securityDecision = Security.stripInaccessible(AccessType.READABLE, newDefaultRecord);
             Set<String> strippedFields = securityDecision.getRemovedFields().get(parentObjectType);
             if (strippedFields != null && strippedFields.contains(field)) {
@@ -567,10 +654,14 @@ public with sharing class TimelineService {
                     '(' +
                     fieldLabel +
                     ')';
+
                 throw new TimelineSetupException('{"type": "No-Access", "message": "' + errorMsg + '"}');
             }
+
             SObject secureObject = securityDecision.getRecords()[0];
+
             fieldValue = String.valueOf(secureObject.get(field));
+
             if (fieldValue == null || fieldValue == '') {
                 String errorMsg =
                     'We can\'t display the timeline. The field requested has no value. ' +
@@ -580,18 +671,22 @@ public with sharing class TimelineService {
                     ')';
                 throw new TimelineSetupException('{"type": "No-Data", "message": "' + errorMsg + '"}');
             }
+
             parentObjectType = String.valueOf(Id.valueOf(fieldValue).getSobjectType());
         }
+
         if (parentObjectType == 'Account' && isPersonAccount(fieldValue)) {
             parentConfigType = 'PersonAccount';
         } else {
             parentConfigType = parentObjectType;
         }
+
         parentDetails.put('Id', fieldValue);
         parentDetails.put('QueryObjectType', parentObjectType);
         parentDetails.put('ConfigObjectType', parentConfigType);
         return parentDetails;
     }
+
     /**
      * @description Converts an UpperCamelCase string to a user-friendly format with spaces.
      * @param input The UpperCamelCase string (e.g., 'TrackedChange').
@@ -606,6 +701,7 @@ public with sharing class TimelineService {
         // 'TrackedChange' -> ' Tracked Change' -> 'Tracked Change'
         return input.replaceAll('([A-Z])', ' $1').trim();
     }
+
     private class TimelineRecord { //NOPMD
         private String relationshipName;
         private String parentObject;
