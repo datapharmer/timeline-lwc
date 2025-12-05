@@ -338,7 +338,7 @@ public with sharing class TimelineService {
                                 
                                 if (String.isBlank(detailValue)) {
                                     // For CaseComment with empty Body, show a more helpful message
-                                    if ('CaseComment'.equals(tr.objectName) && '\[Body\]'.equalsIgnoreCase(detailValues.get('label'))) {
+                                    if ('CaseComment'.equals(tr.objectName) && '[Body]'.equalsIgnoreCase(detailValues.get('label'))) {
                                         mapData.put('detailField', '[Hover for Details]');
                                     } else {
                                         mapData.put('detailField', '[' + detailValues.get('label') + ']');
